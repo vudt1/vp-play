@@ -1,0 +1,24 @@
+{
+  "name": "vp-play",
+  "version": "1.0.0",
+  "description": "Internal LAN entertainment portal with Tien Len Mien Nam",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node -e \"process.env.VP_ENV='development';require('./server.js')\"",
+    "start": "node -e \"process.env.VP_ENV='production';require('./server.js')\"",
+    "start:prod": "node -e \"process.env.VP_ENV='production';require('./server.js')\"",
+    "test": "node --test tests/domain/rules.test.js tests/rooms/roomTable.test.js tests/config/env.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true,
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^17.4.2",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "jose": "^6.2.3",
+    "socket.io": "^4.8.3"
+  }
+}

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %> · VP Play</title>
+  <% if (appPrefix) { %><base href="<%= appPrefix %>/" /><% } %>
+  <link rel="stylesheet" href="<%= publicPath('/css/style.css') %>" />
+  <script defer src="<%= publicPath('/vendor/alpine.min.js') %>"></script>
+  <script src="<%= publicPath('/vendor/keycloak.min.js') %>"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="<%= publicPath('/') %>">VP Play</a>
+    <nav>
+      <a href="<%= publicPath('/') %>">Portal</a>
+      <a href="<%= publicPath('/ranking') %>">Xếp hạng</a>
+    </nav>
+    <div id="auth-slot"></div>
+  </header>
+  <main class="container">

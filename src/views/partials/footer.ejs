@@ -1,0 +1,11 @@
+</main>
+  <footer class="footer">
+    <span>VP Play · LAN nội bộ</span>
+  </footer>
+  <script>
+    window.VP_BASE = <%- JSON.stringify(appPrefix || '') %>;
+    window.VP_KEYCLOAK = <%- JSON.stringify(keycloak) %>;
+  </script>
+  <script src="<%= publicPath('/js/portal-auth.js') %>"></script>
+</body>
+</html>

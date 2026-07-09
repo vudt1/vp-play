@@ -1,0 +1,42 @@
+<%- include('partials/header') %>
+
+<section class="hero" x-data="rankApp()" x-init="load()">
+  <h1>Bảng xếp hạng</h1>
+  <div class="card">
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Người chơi</th>
+          <th>Điểm</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="(row, i) in rows" :key="row.pccuid">
+          <tr>
+            <td x-text="i + 1"></td>
+            <td x-text="row.displayName"></td>
+            <td x-text="row.totalPoints"></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+    <p class="muted" x-show="rows.length === 0">Chưa có điểm.</p>
+    <button type="button" class="btn" @click="load()">Làm mới</button>
+  </div>
+</section>
+
+<script>
+  function rankApp() {
+    const base = window.VP_BASE || '';
+    return {
+      rows: [],
+      async load() {
+        const res = await fetch(base + '/api/ranks');
+        this.rows = await res.json();
+      },
+    };
+  }
+</script>
+
+<%- include('partials/footer') %>
