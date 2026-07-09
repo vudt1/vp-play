@@ -12,9 +12,9 @@
 <body>
   <header class="topbar">
     <a class="brand" href="<%= publicPath('/') %>">VP Play</a>
-    <nav>
-      <a href="<%= publicPath('/') %>">Portal</a>
-      <a href="<%= publicPath('/ranking') %>">Xếp hạng</a>
+    <nav class="topnav" aria-label="Chính">
+      <a href="<%= publicPath('/') %>" class="<%= typeof navActive !== 'undefined' && navActive === 'apps' ? 'is-active' : '' %>">Ứng dụng</a>
+      <a href="<%= publicPath('/ranking') %>" class="<%= typeof navActive !== 'undefined' && navActive === 'ranking' ? 'is-active' : '' %>">Xếp hạng</a>
     </nav>
     <div id="auth-slot"></div>
   </header>

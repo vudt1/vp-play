@@ -1,6 +1,6 @@
 # VP Play
 
-Portal giải trí LAN nội bộ với một mini-game Tiến Lên Miền Nam: phòng cố định, ván bài realtime, điểm cộng dồn theo thứ tự về đích.
+Portal giải trí LAN nội bộ với catalog mini-app (Module) và ván bài realtime; điểm cộng dồn global theo totalPoints.
 
 ## Language
 
@@ -8,8 +8,16 @@ Portal giải trí LAN nội bộ với một mini-game Tiến Lên Miền Nam: 
 Người đã xác thực (Keycloak), định danh bằng `pccuid`.
 _Avoid_: Account, user account, client
 
+**Module**:
+Một mini-app được catalog trên portal (`/public/modules/<id>`), có icon và app surface riêng.
+_Avoid_: App store app, plugin, game (ambiguous with Hand)
+
+**App surface**:
+Trang portal của một Module (chi tiết + play chrome); Module multiplayer chứa Room lobby và iframe tại đây.
+_Avoid_: Game page, lobby (alone)
+
 **Room**:
-Một trong ba slot sảnh cố định, tối đa bốn ghế.
+Một trong ba slot sảnh cố định trong Module multiplayer, tối đa bốn ghế.
 _Avoid_: Lobby table, match, session
 
 **Host**:
@@ -37,5 +45,5 @@ Thứ tự người chơi hết bài (nhất … bét).
 _Avoid_: Placement, ELO
 
 **totalPoints**:
-Điểm cộng dồn dùng cho bảng xếp hạng.
+Điểm cộng dồn toàn portal (mọi Module ghi delta vào cùng tổng); dùng cho bảng xếp hạng global top 10.
 _Avoid_: ELO, chips, money

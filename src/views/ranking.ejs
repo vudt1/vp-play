@@ -1,7 +1,10 @@
 <%- include('partials/header') %>
 
-<section class="hero" x-data="rankApp()" x-init="init()">
-  <h1>Bảng xếp hạng</h1>
+<section class="page ranking-page" x-data="rankApp()" x-init="init()">
+  <header class="page-header">
+    <h1 class="page-title">Bảng xếp hạng</h1>
+    <p class="page-sub muted">Tổng điểm mọi trò chơi · Top 10</p>
+  </header>
 
   <div class="card auth-card" x-show="authReady && !profile && !devMode">
     <p class="muted" x-show="!authError">Đang xác thực Keycloak…</p>
@@ -13,22 +16,22 @@
     <table class="rank-table">
       <thead>
         <tr>
-          <th>#</th>
+          <th class="col-rank">#</th>
           <th>Người chơi</th>
-          <th>Điểm</th>
+          <th class="col-pts">Điểm</th>
         </tr>
       </thead>
       <tbody>
         <template x-for="(row, i) in rows" :key="row.pccuid">
-          <tr>
-            <td x-text="i + 1"></td>
+          <tr :class="{ 'is-top': i < 3 }">
+            <td class="col-rank" x-text="i + 1"></td>
             <td x-text="row.displayName"></td>
-            <td x-text="row.totalPoints"></td>
+            <td class="col-pts" x-text="row.totalPoints"></td>
           </tr>
         </template>
       </tbody>
     </table>
-    <p class="muted" x-show="rows.length === 0">Chưa có điểm.</p>
+    <p class="muted empty-hint" x-show="rows.length === 0">Chưa có điểm.</p>
     <button type="button" class="btn" @click="load()">Làm mới</button>
   </div>
 </section>
@@ -67,8 +70,9 @@
       },
 
       async load() {
-        const res = await fetch(base + '/api/ranks');
-        this.rows = await res.json();
+        const res = await fetch(base + '/api/ranks?limit=10');
+        const data = await res.json();
+        this.rows = Array.isArray(data) ? data.slice(0, 10) : [];
       },
     };
   }

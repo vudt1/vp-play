@@ -4,9 +4,9 @@ Instructions for AI coding agents working in this repository. Read this file bef
 
 ## Project
 
-**VP Play** is a small internal LAN entertainment portal: Express portal + Socket.IO realtime + one mini-game **Tiến Lên Miền Nam** (Phaser). Scale: **3 fixed rooms**, **max 4 players per room**, **2–4 humans** (no bots).
+**VP Play** is a small internal LAN entertainment portal: Express portal (Module catalog + app surfaces) + Socket.IO realtime + mini-apps under `public/modules/` (first: **Tiến Lên Miền Nam** / Phaser). Multiplayer scale for Tiến Lên: **3 fixed rooms**, **max 4 players per room**, **2–4 humans** (no bots).
 
-Product research lives in `spec/` (`codebase_init.md`, `logic_game.md`). Runtime code is not there.
+Product research lives in `spec/` (`codebase_init.md`, `logic_game.md`). Runtime code is not there. Design system: `DESIGN.md`.
 
 Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 
@@ -17,7 +17,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 | Runtime | Node.js | Single process |
 | HTTP | Express | REST + static + EJS |
 | Views | EJS | Portal SSR |
-| Client portal | Alpine.js | Login, lobby, ranking |
+| Client portal | Alpine.js | Catalog, app surface, ranking |
 | Auth | Keycloak-js (browser) + JWT verify (server) | Id: `KEYCLOAK_ID_CLAIM` (default `pccuid`); display: `KEYCLOAK_DISPLAY_NAME_CLAIM` (default `preferred_username`) |
 | Realtime | Socket.IO | Room/hand events; auth on handshake |
 | Game client | Phaser 3 | `public/modules/tienlen/`, loaded in **iframe** |
@@ -29,15 +29,17 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 ## Repository map
 
 - `server.js` — process entry: HTTP server, view engine, static, Socket.IO attach
+- `src/modules/catalog.js` — static Module catalog (id, name, blurb, icon, entry, kind)
 - `src/domain/` — **pure** card/combo/rules/deal/scoring (no I/O, no Socket, no Express)
 - `src/rooms/roomTable.js` — in-memory rooms/seats/hand phase (deep module; test without Socket)
 - `src/sockets/` — thin adapters: auth middleware, event names, broadcast
 - `src/auth/`, `src/services/`, `src/controllers/` — Keycloak verify, user sync, ranks
-- `src/views/` — EJS portal templates
-- `public/` — CSS + mini-game static assets
+- `src/views/` — EJS portal templates (`/` catalog, `/apps/:id` app surface, `/ranking`)
+- `public/` — CSS + mini-app static assets (`public/modules/<id>/`, icon at `icon.png`)
 - `assets/card/svg/` — source card SVGs (copy or link into game assets)
 - `tests/` — prefer domain + roomTable unit tests
 - `spec/` — design notes only
+- `DESIGN.md` — portal design tokens / UI contract
 
 ## Commands
 
@@ -60,13 +62,15 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 4. **No formal FSM library.** Use `phase` enums (`idle | waiting | playing | settling`) and explicit handler guards.
 5. **MVP rules only (Classic core):** singles/pairs/triples/quads, straights (≥3, no 2s), 3/4 consecutive pairs (no 2s), same-shape beat, specials (tứ quý / 3 đôi thông vs single 2; 4 đôi thông vs single|pair 2 or tứ quý), **in-turn only**. Every hand opens with **3♠** holder. Full finish ranking + simple points.
 6. **Explicit non-goals:** tới trắng, đền bài, thối 3 bích, cóng multipliers, AI autoplay, out-of-turn chặt, ELO, spectators, mid-hand DB persistence.
-7. **Auth path:** Portal owns Keycloak. With `AUTH_DEV_BYPASS=0`, portal pages use `login-required` and must succeed `POST /api/auth/sync` before gameplay; access token may be cached in `localStorage` (`vp_access_token`). Display name in header `#auth-slot`. Game iframe receives `{ type: 'vp-auth', token, profile }` via **postMessage** (same origin). Socket uses token; server verifies JWKS. **Do not** init Keycloak inside the iframe.
-8. **Rooms:** exactly 3 fixed slots; Host = first joiner, migrates on leave; host starts at 2–4 players; after hand → waiting + host restarts.
-9. **Disconnect:** hold seat ~`RECONNECT_MS` (default 60s); turn timeout → auto-pass (not AI card choice).
-10. **Card ids:** `id = rank * 4 + suit`, rank 0=3 … 12=2, suit 0=♠ 1=♣ 2=♦ 3=♥; **3♠ = 0** (see `spec/logic_game.md`).
-11. **Secrets:** never commit `.env`, `.env.development`, `.env.production`, tokens, or Keycloak secrets. Use `*.example` only for names.
-12. **Comments:** no drive-by comments; no narrating code. Update `AGENTS.md` / `CONTEXT.md` / ADR when decisions change.
-13. **Commits:** only when the human asks.
+7. **Auth path:** Portal owns Keycloak. With `AUTH_DEV_BYPASS=0`, all portal pages (`/`, `/apps/:id`, `/ranking`) use `login-required` and must succeed `POST /api/auth/sync` before useful UI; access token may be cached in `localStorage` (`vp_access_token`). Display name in header `#auth-slot`. Game iframe receives `{ type: 'vp-auth', token, profile }` via **postMessage** (same origin). Socket uses token; server verifies JWKS. **Do not** init Keycloak inside the iframe.
+8. **Portal IA:** home `/` = Module catalog only; multiplayer Room lobby + iframe live on app surface `/apps/:id`. Leaving the app surface (Back / navigate away) must emit `room:leave` when seated. Ranking `/ranking` = global top 10 by raw `totalPoints` (all Modules share one sum via `applyPoints`).
+9. **Rooms:** exactly 3 fixed slots (Tiến Lên); Host = first joiner, migrates on leave; host starts at 2–4 players; after hand → waiting + host restarts.
+10. **Disconnect:** hold seat ~`RECONNECT_MS` (default 60s); turn timeout → auto-pass (not AI card choice).
+11. **Card ids:** `id = rank * 4 + suit`, rank 0=3 … 12=2, suit 0=♠ 1=♣ 2=♦ 3=♥; **3♠ = 0** (see `spec/logic_game.md`).
+12. **Module icons:** `public/modules/<id>/icon.png` (or `.svg`); catalog reads path from manifest.
+13. **Secrets:** never commit `.env`, `.env.development`, `.env.production`, tokens, or Keycloak secrets. Use `*.example` only for names.
+14. **Comments:** no drive-by comments; no narrating code. Update `AGENTS.md` / `CONTEXT.md` / ADR / `DESIGN.md` when decisions change.
+15. **Commits:** only when the human asks.
 
 ## Coding conventions
 
@@ -75,7 +79,8 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 - Socket event names: `room:*` and `hand:*`; keep payloads small.
 - Errors to client: structured `{ code, message }` on `hand:error` / join rejects; do not leak stack traces.
 - SQLite access only via config/services — no ad-hoc DB in socket files.
-- UI: keep portal and game separated (EJS/Alpine vs Phaser); shared knowledge is card id encoding and socket contract only.
+- UI: keep portal and game separated (EJS/Alpine vs Phaser); shared knowledge is card id encoding and socket contract only. Portal CSS stays hand-written per `DESIGN.md` (no Tailwind unless human ADR).
+- New mini-app: add `public/modules/<id>/` + `icon.png` + one entry in `src/modules/catalog.js`.
 
 ## Testing expectations
 

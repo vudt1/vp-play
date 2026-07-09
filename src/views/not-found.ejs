@@ -1,0 +1,11 @@
+<%- include('partials/header') %>
+
+<section class="page">
+  <header class="page-header">
+    <h1 class="page-title">Không tìm thấy</h1>
+    <p class="page-sub muted"><%= typeof message !== 'undefined' ? message : 'Trang không tồn tại.' %></p>
+  </header>
+  <a class="btn primary" href="<%= publicPath('/') %>">Về ứng dụng</a>
+</section>
+
+<%- include('partials/footer') %>

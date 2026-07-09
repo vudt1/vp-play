@@ -99,10 +99,21 @@
     apiUrl,
     renderAuthSlot,
     login: () => {},
+    beforeLogout: null,
     logout: () => {
-      clearSession();
-      renderAuthSlot();
-      notifyAuthChanged();
+      const run = () => {
+        clearSession();
+        renderAuthSlot();
+        notifyAuthChanged();
+      };
+      const hook = window.vpAuth.beforeLogout;
+      if (typeof hook === 'function') {
+        Promise.resolve(hook())
+          .catch(() => {})
+          .then(run);
+        return;
+      }
+      run();
     },
     refreshProfile: async () => {},
     retrySync: async () => {},
@@ -111,9 +122,19 @@
   if (cfg.authDevBypass) {
     window.vpAuth.devMode = true;
     window.vpAuth.logout = () => {
-      clearSession();
-      notifyAuthChanged();
-      window.location.reload();
+      const run = () => {
+        clearSession();
+        notifyAuthChanged();
+        window.location.reload();
+      };
+      const hook = window.vpAuth.beforeLogout;
+      if (typeof hook === 'function') {
+        Promise.resolve(hook())
+          .catch(() => {})
+          .then(run);
+        return;
+      }
+      run();
     };
     renderAuthSlot();
     return;
@@ -200,12 +221,22 @@
   window.vpAuth.login = () => keycloak.login();
 
   window.vpAuth.logout = () => {
-    clearSession();
-    renderAuthSlot();
-    notifyAuthChanged();
-    keycloak.logout({
-      redirectUri: window.location.origin + (base || '') + '/',
-    });
+    const run = () => {
+      clearSession();
+      renderAuthSlot();
+      notifyAuthChanged();
+      keycloak.logout({
+        redirectUri: window.location.origin + (base || '') + '/',
+      });
+    };
+    const hook = window.vpAuth.beforeLogout;
+    if (typeof hook === 'function') {
+      Promise.resolve(hook())
+        .catch(() => {})
+        .then(run);
+      return;
+    }
+    run();
   };
 
   window.vpAuth.retrySync = async () => {

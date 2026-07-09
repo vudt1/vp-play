@@ -1,0 +1,107 @@
+<%- include('partials/header') %>
+
+<section
+  class="page app-page"
+  x-data="portalApp()"
+  x-init="init()"
+  data-module-kind="<%= module.kind %>"
+>
+  <header class="app-header">
+    <a class="btn ghost back-link" href="<%= publicPath('/') %>" @click="leaveSurface($event)">← Ứng dụng</a>
+    <div class="app-header-main">
+      <div class="app-icon" data-initials="<%= module.name.slice(0, 2) %>">
+        <img
+          src="<%= publicPath(module.iconPath) %>"
+          alt=""
+          width="64"
+          height="64"
+          onerror="this.remove()"
+        />
+      </div>
+      <div>
+        <h1 class="page-title"><%= module.name %></h1>
+        <p class="page-sub muted"><%= module.blurb %></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="card auth-card" x-show="authReady && !profile && !devMode">
+    <p class="muted" x-show="!authError">Đang xác thực Keycloak…</p>
+    <p x-show="authError" x-text="authError"></p>
+    <button type="button" class="btn primary" x-show="authError" @click="retryAuth()">Thử lại</button>
+  </div>
+
+  <div class="card auth-card" x-show="devMode && !profile">
+    <p>Chế độ dev (AUTH_DEV_BYPASS): nhập pccuid giả.</p>
+    <p class="muted" x-show="authError" x-text="authError"></p>
+    <input type="text" x-model="devId" placeholder="pccuid" />
+    <button type="button" class="btn primary" @click="devLogin()">Vào portal</button>
+  </div>
+
+  <template x-if="profile">
+    <div class="play-area">
+      <% if (module.kind === 'multiplayer') { %>
+      <div class="card">
+        <div class="row between card-head">
+          <h2 class="card-title">Phòng chơi</h2>
+          <span class="muted label-meta" x-show="seatedRoomId">Đang ngồi phòng <span x-text="seatedRoomId"></span></span>
+        </div>
+        <p class="join-error" x-show="joinError" x-text="joinError"></p>
+        <div class="rooms">
+          <template x-for="room in rooms" :key="room.id">
+            <div class="room-slot" :class="{ 'is-seated': inRoom(room.id) }">
+              <div class="room-title">Phòng <span x-text="room.id"></span></div>
+              <div class="muted room-meta" x-text="phaseLabel(room.phase) + ' · ' + room.seats.length + '/4'"></div>
+              <ul class="seat-list">
+                <template x-for="s in room.seats" :key="s.pccuid">
+                  <li x-text="s.displayName + (s.pccuid === room.hostPccuid ? ' (Host)' : '')"></li>
+                </template>
+              </ul>
+              <div class="room-actions">
+                <button
+                  type="button"
+                  class="btn primary"
+                  @click="joinRoom(room.id)"
+                  :disabled="!canJoin(room)"
+                  x-show="!inRoom(room.id)"
+                >Vào phòng</button>
+                <button
+                  type="button"
+                  class="btn ghost"
+                  @click="leaveRoom()"
+                  x-show="inRoom(room.id)"
+                >Rời phòng</button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+      <% } %>
+
+      <div class="card game-shell" x-show="showGame">
+        <div class="row between card-head">
+          <h2 class="card-title">Bàn chơi</h2>
+          <button type="button" class="btn ghost" @click="closeGame()">Đóng bàn</button>
+        </div>
+        <iframe
+          id="module-frame"
+          src="<%= publicPath(module.entryPath) %>?base=<%= encodeURIComponent(appPrefix || '') %>"
+          title="<%= module.name %>"
+          class="game-frame"
+          @load="postAuthToGame()"
+        ></iframe>
+      </div>
+
+      <div class="card" x-show="!showGame && profile">
+        <button type="button" class="btn primary" @click="openGame()" :disabled="<%= module.kind === 'multiplayer' ? '!seatedRoomId' : 'false' %>">
+          <%= module.kind === 'multiplayer' ? 'Mở bàn (cần vào phòng)' : 'Mở' %>
+        </button>
+      </div>
+    </div>
+  </template>
+</section>
+
+<script src="<%= publicPath('/socket.io/socket.io.js') %>"></script>
+<script src="<%= publicPath('/js/portal-app.js') %>"></script>
+
+<%- include('partials/footer') %>

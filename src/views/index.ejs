@@ -1,10 +1,10 @@
 <%- include('partials/header') %>
 
-<section class="hero" x-data="portalApp()" x-init="init()">
-  <div class="hero-text">
-    <h1>VP Play</h1>
-    <p>Cổng giải trí LAN · Tiến Lên Miền Nam · 3 phòng · tối đa 4 người / phòng</p>
-  </div>
+<section class="page catalog-page" x-data="catalogPage()" x-init="init()">
+  <header class="page-header">
+    <h1 class="page-title">Ứng dụng</h1>
+    <p class="page-sub muted">Cổng giải trí nội bộ · chọn mini-app để chơi</p>
+  </header>
 
   <div class="card auth-card" x-show="authReady && !profile && !devMode">
     <p class="muted" x-show="!authError">Đang xác thực Keycloak…</p>
@@ -20,52 +20,33 @@
   </div>
 
   <template x-if="profile">
-    <div class="play-area">
-      <div class="card">
-        <h2>Phòng chơi</h2>
-        <div class="rooms">
-          <template x-for="room in rooms" :key="room.id">
-            <div class="room-slot">
-              <div class="room-title">Phòng <span x-text="room.id"></span></div>
-              <div class="muted" x-text="room.phase + ' · ' + room.seats.length + '/4'"></div>
-              <ul class="seat-list">
-                <template x-for="s in room.seats" :key="s.pccuid">
-                  <li x-text="s.displayName + (s.pccuid === room.hostPccuid ? ' (Host)' : '')"></li>
-                </template>
-              </ul>
-              <button
-                type="button"
-                class="btn primary"
-                @click="joinRoom(room.id)"
-                :disabled="room.seats.length >= 4 && !inRoom(room.id)"
-              >Vào phòng</button>
-            </div>
-          </template>
+    <div class="module-grid" role="list">
+      <% modules.forEach(function (mod) { %>
+      <a
+        class="module-tile"
+        role="listitem"
+        href="<%= publicPath('/apps/' + mod.id) %>"
+      >
+        <div class="module-tile-icon" data-initials="<%= mod.name.slice(0, 2) %>">
+          <img
+            src="<%= publicPath(mod.iconPath) %>"
+            alt=""
+            width="96"
+            height="96"
+            loading="lazy"
+            onerror="this.remove()"
+          />
         </div>
-      </div>
-
-      <div class="card game-shell" x-show="showGame">
-        <div class="row between">
-          <h2>Tiến Lên Miền Nam</h2>
-          <button type="button" class="btn ghost" @click="closeGame()">Đóng</button>
+        <div class="module-tile-body">
+          <h2 class="module-tile-title"><%= mod.name %></h2>
+          <p class="module-tile-blurb muted"><%= mod.blurb %></p>
         </div>
-        <iframe
-          id="tienlen-frame"
-          src="<%= publicPath('/modules/tienlen/index.html') %>?base=<%= encodeURIComponent(appPrefix || '') %>"
-          title="Tiến Lên"
-          class="game-frame"
-          @load="postAuthToGame()"
-        ></iframe>
-      </div>
-
-      <div class="card" x-show="!showGame">
-        <button type="button" class="btn primary" @click="openGame()">Mở bàn Tiến Lên</button>
-      </div>
+      </a>
+      <% }) %>
     </div>
   </template>
 </section>
 
-<script src="<%= publicPath('/socket.io/socket.io.js') %>"></script>
-<script src="<%= publicPath('/js/portal-app.js') %>"></script>
+<script src="<%= publicPath('/js/portal-catalog.js') %>"></script>
 
 <%- include('partials/footer') %>
