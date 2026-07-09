@@ -1,8 +1,15 @@
 <%- include('partials/header') %>
 
-<section class="hero" x-data="rankApp()" x-init="load()">
+<section class="hero" x-data="rankApp()" x-init="init()">
   <h1>Bảng xếp hạng</h1>
-  <div class="card">
+
+  <div class="card auth-card" x-show="authReady && !profile && !devMode">
+    <p class="muted" x-show="!authError">Đang xác thực Keycloak…</p>
+    <p x-show="authError" x-text="authError"></p>
+    <button type="button" class="btn primary" x-show="authError" @click="retryAuth()">Thử lại</button>
+  </div>
+
+  <div class="card" x-show="profile || devMode">
     <table class="rank-table">
       <thead>
         <tr>
@@ -31,6 +38,34 @@
     const base = window.VP_BASE || '';
     return {
       rows: [],
+      profile: null,
+      authError: null,
+      authReady: false,
+      devMode: false,
+
+      async init() {
+        await (window.vpAuth?.ready || Promise.resolve());
+        this.authReady = true;
+        this.devMode = !!window.vpAuth?.devMode || !!window.VP_KEYCLOAK?.authDevBypass;
+        window.vpAuth?.renderAuthSlot?.();
+        window.addEventListener('vp-auth-changed', () => this.applyAuthState());
+        await this.applyAuthState();
+      },
+
+      async applyAuthState() {
+        this.authError = window.vpAuth?.error || null;
+        this.profile = window.vpAuth?.profile || null;
+        if (this.profile || this.devMode) {
+          await this.load();
+        }
+      },
+
+      async retryAuth() {
+        this.authError = null;
+        await window.vpAuth?.retrySync?.();
+        await this.applyAuthState();
+      },
+
       async load() {
         const res = await fetch(base + '/api/ranks');
         this.rows = await res.json();

@@ -22,6 +22,7 @@ async function syncFromRequest(req, res) {
       totalPoints: user.total_points,
     });
   } catch (e) {
+    console.error('[vp-play] auth sync failed', e?.message || e);
     return res.status(500).json({ code: 'SYNC_FAILED', message: 'Sync failed' });
   }
 }

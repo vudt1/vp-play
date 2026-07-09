@@ -5,13 +5,22 @@ const { env } = require('../config/env');
 
 let jwks;
 
+function keycloakBaseUrl() {
+  return String(env.keycloakUrl || '').replace(/\/+$/, '');
+}
+
+function jwksUrl() {
+  // KEYCLOAK_URL may include a context path (e.g. .../auth). A path starting with
+  // "/" would replace that segment in new URL(path, base) — keep a relative join.
+  return new URL(
+    `realms/${env.keycloakRealm}/protocol/openid-connect/certs`,
+    `${keycloakBaseUrl()}/`
+  );
+}
+
 function getJwks() {
   if (!jwks) {
-    const url = new URL(
-      `/realms/${env.keycloakRealm}/protocol/openid-connect/certs`,
-      env.keycloakUrl
-    );
-    jwks = createRemoteJWKSet(url);
+    jwks = createRemoteJWKSet(jwksUrl());
   }
   return jwks;
 }
@@ -66,7 +75,7 @@ async function verifyAccessToken(token) {
   }
 
   try {
-    const issuer = `${env.keycloakUrl.replace(/\/$/, '')}/realms/${env.keycloakRealm}`;
+    const issuer = `${keycloakBaseUrl()}/realms/${env.keycloakRealm}`;
     const { payload } = await jwtVerify(token, getJwks(), {
       issuer,
     });
@@ -76,8 +85,13 @@ async function verifyAccessToken(token) {
     }
     return { ok: true, player, payload };
   } catch (e) {
+    console.error(
+      '[vp-play] token verify failed',
+      e?.code || e?.name || '',
+      e?.message || e
+    );
     return { ok: false, code: 'INVALID_TOKEN', message: 'Token verification failed' };
   }
 }
 
-module.exports = { verifyAccessToken, extractPlayer };
+module.exports = { verifyAccessToken, extractPlayer, jwksUrl, keycloakBaseUrl };

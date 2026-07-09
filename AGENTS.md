@@ -60,7 +60,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 4. **No formal FSM library.** Use `phase` enums (`idle | waiting | playing | settling`) and explicit handler guards.
 5. **MVP rules only (Classic core):** singles/pairs/triples/quads, straights (≥3, no 2s), 3/4 consecutive pairs (no 2s), same-shape beat, specials (tứ quý / 3 đôi thông vs single 2; 4 đôi thông vs single|pair 2 or tứ quý), **in-turn only**. Every hand opens with **3♠** holder. Full finish ranking + simple points.
 6. **Explicit non-goals:** tới trắng, đền bài, thối 3 bích, cóng multipliers, AI autoplay, out-of-turn chặt, ELO, spectators, mid-hand DB persistence.
-7. **Auth path:** Portal owns Keycloak. Game iframe receives `{ type: 'vp-auth', token, profile }` via **postMessage** (same origin). Socket uses token; server verifies JWKS. **Do not** init Keycloak inside the iframe.
+7. **Auth path:** Portal owns Keycloak. With `AUTH_DEV_BYPASS=0`, portal pages use `login-required` and must succeed `POST /api/auth/sync` before gameplay; access token may be cached in `localStorage` (`vp_access_token`). Display name in header `#auth-slot`. Game iframe receives `{ type: 'vp-auth', token, profile }` via **postMessage** (same origin). Socket uses token; server verifies JWKS. **Do not** init Keycloak inside the iframe.
 8. **Rooms:** exactly 3 fixed slots; Host = first joiner, migrates on leave; host starts at 2–4 players; after hand → waiting + host restarts.
 9. **Disconnect:** hold seat ~`RECONNECT_MS` (default 60s); turn timeout → auto-pass (not AI card choice).
 10. **Card ids:** `id = rank * 4 + suit`, rank 0=3 … 12=2, suit 0=♠ 1=♣ 2=♦ 3=♥; **3♠ = 0** (see `spec/logic_game.md`).

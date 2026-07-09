@@ -22,43 +22,106 @@ function portalApp() {
     socket: null,
     devMode: false,
     devId: 'player1',
+    authError: null,
+    authReady: false,
 
     async init() {
       await (window.vpAuth?.ready || Promise.resolve());
+      this.authReady = true;
       this.devMode = !!window.vpAuth?.devMode || !!window.VP_KEYCLOAK?.authDevBypass;
-      if (window.vpAuth?.profile) {
-        this.profile = window.vpAuth.profile;
-        this.token = window.vpAuth.token;
-        this.connectSocket();
-      }
+      this.applyAuthState();
+      window.vpAuth?.renderAuthSlot?.();
+      window.addEventListener('vp-auth-changed', () => this.applyAuthState());
       window.addEventListener('message', (ev) => {
         if (ev.origin !== window.location.origin) return;
         if (ev.data?.type === 'vp-game-ready') this.postAuthToGame();
       });
     },
 
-    login() {
-      window.vpAuth?.login?.();
+    applyAuthState() {
+      this.authError = window.vpAuth?.error || null;
+      if (window.vpAuth?.profile && window.vpAuth?.token) {
+        const prev = this.token;
+        this.profile = window.vpAuth.profile;
+        this.token = window.vpAuth.token;
+        if (!this.socket || prev !== this.token) this.connectSocket();
+      } else {
+        this.profile = null;
+        this.token = null;
+        if (this.socket) {
+          this.socket.disconnect();
+          this.socket = null;
+        }
+      }
     },
 
-    logout() {
-      window.vpAuth?.logout?.();
+    async retryAuth() {
+      this.authError = null;
+      await window.vpAuth?.retrySync?.();
+      this.applyAuthState();
     },
 
     async devLogin() {
       const id = (this.devId || 'player1').trim();
+      if (!id) {
+        this.authError = 'pccuid bắt buộc';
+        return;
+      }
+      this.authError = null;
+      let res;
+      try {
+        res = await fetch(apiUrl('/api/auth/sync'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${id}`,
+          },
+          body: JSON.stringify({ displayName: id }),
+        });
+      } catch (_) {
+        this.authError = 'Không đồng bộ được tài khoản';
+        this.profile = null;
+        this.token = null;
+        return;
+      }
+      if (!res.ok) {
+        let message = 'Đồng bộ tài khoản thất bại';
+        try {
+          const body = await res.json();
+          if (body?.message) message = body.message;
+        } catch (_) {
+          /* ignore */
+        }
+        this.authError = message;
+        this.profile = null;
+        this.token = null;
+        if (window.vpAuth) {
+          window.vpAuth.token = null;
+          window.vpAuth.profile = null;
+          window.vpAuth.error = message;
+          window.vpAuth.renderAuthSlot?.();
+          window.dispatchEvent(new CustomEvent('vp-auth-changed'));
+        }
+        return;
+      }
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {
+        /* ignore */
+      }
       this.token = id;
-      this.profile = { pccuid: id, displayName: id };
-      window.vpAuth.token = id;
-      window.vpAuth.profile = this.profile;
-      await fetch(apiUrl('/api/auth/sync'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${id}`,
-        },
-        body: JSON.stringify({ displayName: id }),
-      });
+      this.profile = {
+        pccuid: data.pccuid || id,
+        displayName: data.displayName || id,
+      };
+      if (window.vpAuth) {
+        window.vpAuth.token = id;
+        window.vpAuth.profile = this.profile;
+        window.vpAuth.error = null;
+        window.vpAuth.renderAuthSlot?.();
+        window.dispatchEvent(new CustomEvent('vp-auth-changed'));
+      }
       this.connectSocket();
     },
 

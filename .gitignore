@@ -5,6 +5,5 @@ database/*.db-*
 *.log
 package-lock.json
 .env.example
-.kilo/
 .vscode/
 tests/

@@ -6,29 +6,21 @@
     <p>Cổng giải trí LAN · Tiến Lên Miền Nam · 3 phòng · tối đa 4 người / phòng</p>
   </div>
 
-  <div class="card auth-card" x-show="!profile && !devMode">
-    <p>Đăng nhập Keycloak để chơi.</p>
-    <button type="button" class="btn primary" @click="login()">Đăng nhập</button>
+  <div class="card auth-card" x-show="authReady && !profile && !devMode">
+    <p class="muted" x-show="!authError">Đang xác thực Keycloak…</p>
+    <p x-show="authError" x-text="authError"></p>
+    <button type="button" class="btn primary" x-show="authError" @click="retryAuth()">Thử lại</button>
   </div>
 
   <div class="card auth-card" x-show="devMode && !profile">
     <p>Chế độ dev (AUTH_DEV_BYPASS): nhập pccuid giả.</p>
+    <p class="muted" x-show="authError" x-text="authError"></p>
     <input type="text" x-model="devId" placeholder="pccuid" />
     <button type="button" class="btn primary" @click="devLogin()">Vào portal</button>
   </div>
 
   <template x-if="profile">
     <div class="play-area">
-      <div class="card">
-        <div class="row between">
-          <div>
-            <strong x-text="profile.displayName"></strong>
-            <span class="muted" x-text="'(' + profile.pccuid + ')'"></span>
-          </div>
-          <button type="button" class="btn ghost" @click="logout()" x-show="!devMode">Đăng xuất</button>
-        </div>
-      </div>
-
       <div class="card">
         <h2>Phòng chơi</h2>
         <div class="rooms">
