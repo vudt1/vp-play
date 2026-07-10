@@ -45,6 +45,7 @@ app.get('/', (req, res) => {
     title: 'Ứng dụng',
     modules: listModules(),
     navActive: 'apps',
+    catalogSearch: true,
   });
 });
 

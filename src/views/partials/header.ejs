@@ -10,7 +10,7 @@
   <script src="<%= publicPath('/vendor/keycloak.min.js') %>"></script>
 </head>
 <body class="bg-background min-h-screen flex flex-col">
-  <header class="bg-surface-container sticky top-0 w-full z-50 border-b border-border-muted">
+  <header class="bg-surface-container w-full border-b border-border-muted">
     <div class="flex justify-between items-center h-[72px] px-gutter max-w-max-width mx-auto w-full">
       <div class="flex items-center gap-xl">
         <a href="<%= publicPath('/') %>" class="font-display-lg text-display-lg text-primary no-underline">VP Play Portal</a>
@@ -26,14 +26,16 @@
         </nav>
       </div>
       <div class="flex items-center gap-lg">
-        <div class="hidden sm:flex bg-surface-container-low border border-border-muted rounded-full px-lg py-sm items-center gap-sm">
+        <div class="hidden sm:flex bg-surface-container-low border border-border-muted rounded-full px-lg py-sm items-center gap-sm<%= typeof catalogSearch !== 'undefined' && catalogSearch ? '' : ' opacity-60' %>">
           <span class="material-symbols-outlined text-outline text-[20px]">search</span>
           <input
-            class="bg-transparent border-none outline-none focus:ring-0 text-body-md placeholder:text-outline w-48"
+            id="catalog-search"
+            class="bg-transparent border-none outline-none focus:ring-0 text-body-md placeholder:text-outline w-48 disabled:cursor-not-allowed"
             placeholder="Tìm kiếm ứng dụng..."
             type="search"
             aria-label="Tìm kiếm ứng dụng"
-            tabindex="-1"
+            autocomplete="off"
+            <% if (typeof catalogSearch === 'undefined' || !catalogSearch) { %>disabled tabindex="-1"<% } %>
           />
         </div>
         <div class="flex items-center gap-md">

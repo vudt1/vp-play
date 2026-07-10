@@ -148,7 +148,7 @@ The layout follows a **Fixed Grid** philosophy for the main content area to ensu
   - **Desktop:** 1120px max-width, center-aligned, 24px side margins.
   - **Tablet:** Fluid width, 20px side margins, 3-column grid.
   - **Mobile:** Fluid width, 16px side margins, 1 or 2-column grid.
-- **Navigation:** The top bar is pinned (sticky) with a height of `72px`, acting as a constant anchor for user orientation.
+- **Navigation:** The top bar sits in document flow (not sticky/fixed) with a height of `72px` and scrolls with the page.
 
 ## Elevation & Depth
 

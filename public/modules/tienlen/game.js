@@ -112,6 +112,11 @@
       if (mine) {
         state.room = mine;
         render();
+      } else if (state.room) {
+        state.room = null;
+        state.hand = [];
+        state.selected.clear();
+        render();
       }
     });
 
@@ -119,6 +124,11 @@
       if (!state.profile) return;
       if (room.seats.some((s) => s.pccuid === state.profile.pccuid)) {
         state.room = room;
+        render();
+      } else if (state.room && state.room.id === room.id) {
+        state.room = null;
+        state.hand = [];
+        state.selected.clear();
         render();
       }
     });
@@ -128,18 +138,19 @@
       state.selected.clear();
       renderHand();
       el.status.textContent = 'Đã chia bài';
+      if (state.room) render();
     });
 
     state.socket.on('hand:error', (err) => showError(err));
 
     state.socket.on('hand:finished', (payload) => {
-      const mine = payload.pointsDelta?.[state.profile.pccuid];
+      const mine = payload.pointsDelta?.[state.profile?.pccuid];
       el.status.textContent =
         'Ván xong. Điểm: ' +
         (mine >= 0 ? '+' : '') +
         (mine ?? 0) +
         ' · ' +
-        payload.finishOrder.join(' → ');
+        (payload.finishOrder || []).join(' → ');
       state.hand = [];
       state.selected.clear();
       renderHand();

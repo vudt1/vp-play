@@ -119,9 +119,31 @@ function attachSockets(io) {
     });
 
     socket.on('disconnect', () => {
-      const roomId = table.findPlayerRoom(socket.data.player.pccuid);
+      const pccuid = socket.data.player.pccuid;
+      const roomId = table.findPlayerRoom(pccuid);
       if (roomId == null) return;
-      table.disconnect(socket.data.player.pccuid);
+      let other = null;
+      for (const s of io.sockets.sockets.values()) {
+        if (s.id !== socket.id && s.data?.player?.pccuid === pccuid) {
+          other = s;
+          break;
+        }
+      }
+      if (other) {
+        const r = table.reconnect({
+          ...other.data.player,
+          socketId: other.id,
+        });
+        if (r.ok) {
+          other.join(roomChannel(roomId));
+          broadcastRoom(io, table, roomId);
+          if (r.privateHand) {
+            other.emit('hand:dealt', { cards: r.privateHand });
+          }
+        }
+        return;
+      }
+      table.disconnect(pccuid);
       broadcastRoom(io, table, roomId);
     });
   });

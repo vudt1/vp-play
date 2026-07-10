@@ -11,14 +11,52 @@ function catalogPage() {
     authReady: false,
     devMode: false,
     devId: 'player1',
+    query: '',
+    modules: [],
 
     async init() {
+      const dataEl = document.getElementById('catalog-modules');
+      if (dataEl) {
+        try {
+          this.modules = JSON.parse(dataEl.textContent || '[]');
+        } catch (_) {
+          this.modules = [];
+        }
+      }
+
+      const input = document.getElementById('catalog-search');
+      if (input && !input.disabled) {
+        this.query = input.value || '';
+        input.addEventListener('input', () => {
+          this.query = input.value;
+        });
+      }
+
       await (window.vpAuth?.ready || Promise.resolve());
       this.authReady = true;
       this.devMode = !!window.vpAuth?.devMode || !!window.VP_KEYCLOAK?.authDevBypass;
       this.applyAuthState();
       window.vpAuth?.renderAuthSlot?.();
       window.addEventListener('vp-auth-changed', () => this.applyAuthState());
+    },
+
+    matches(name, blurb) {
+      const q = (this.query || '').trim().toLowerCase();
+      if (!q) return true;
+      const n = String(name || '').toLowerCase();
+      const b = String(blurb || '').toLowerCase();
+      return n.includes(q) || b.includes(q);
+    },
+
+    moduleVisible(id) {
+      const mod = this.modules.find((m) => m.id === id);
+      if (!mod) return true;
+      return this.matches(mod.name, mod.blurb);
+    },
+
+    anyMatch() {
+      if (!this.modules.length) return true;
+      return this.modules.some((m) => this.matches(m.name, m.blurb));
     },
 
     applyAuthState() {

@@ -62,6 +62,8 @@
       <p class="text-on-surface-variant font-body-lg max-w-2xl">Khám phá thế giới giải trí nội bộ với các trò chơi, phim ảnh và âm nhạc chất lượng cao ngay tại VP Play Portal.</p>
     </header>
 
+    <script type="application/json" id="catalog-modules"><%- JSON.stringify(modules.map(function (m) { return { id: m.id, name: m.name, blurb: m.blurb }; })) %></script>
+
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-xl" role="list">
       <% modules.forEach(function (mod) {
         var live = mod.status === 'live';
@@ -75,6 +77,7 @@
         role="listitem"
         href="<%= href %>"
         class="group relative col-span-1 sm:col-span-2 lg:col-span-2 overflow-hidden rounded-xl border border-border-muted bg-surface-container module-tile no-underline text-inherit"
+        x-show="moduleVisible('<%= mod.id %>')"
       >
         <div class="h-64 relative overflow-hidden">
           <% if (mod.coverPath) { %>
@@ -116,6 +119,7 @@
         role="listitem"
         href="<%= href %>"
         class="flex flex-col rounded-xl border border-border-muted bg-surface-container p-lg module-tile group no-underline text-inherit"
+        x-show="moduleVisible('<%= mod.id %>')"
       >
         <div class="aspect-video mb-lg rounded-lg overflow-hidden bg-surface-container-high">
           <% if (mod.coverPath) { %>
@@ -147,6 +151,7 @@
         role="listitem"
         class="flex flex-col rounded-xl border border-border-muted bg-surface-container p-lg module-tile group opacity-90"
         aria-disabled="true"
+        x-show="moduleVisible('<%= mod.id %>')"
       >
         <div class="aspect-video mb-lg rounded-lg overflow-hidden bg-surface-container-high">
           <% if (mod.coverPath) { %>
@@ -172,6 +177,12 @@
       <% } %>
       <% }) %>
     </section>
+
+    <p
+      class="text-on-surface-variant font-body-lg text-center py-3xl"
+      x-show="profile && query.trim() && !anyMatch()"
+      x-cloak
+    >Không tìm thấy ứng dụng</p>
   </div>
 </section>
 

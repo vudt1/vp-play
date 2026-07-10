@@ -166,6 +166,9 @@ function portalApp() {
     connectSocket() {
       if (this.socket) this.socket.disconnect();
       this.socket = io({ path: socketPath(), auth: { token: this.token } });
+      this.socket.on('connect', () => {
+        this.socket.emit('room:list');
+      });
       this.socket.on('room:list', (list) => {
         if (Array.isArray(list)) {
           this.rooms = list;
@@ -178,7 +181,10 @@ function portalApp() {
         else if (room?.id != null) this.rooms.push(room);
         this.syncSeated();
       });
-      this.socket.emit('room:list');
+      this.socket.on('hand:finished', () => {
+        this.socket?.emit('room:list');
+      });
+      if (this.socket.connected) this.socket.emit('room:list');
     },
 
     mergeRoom(room) {
