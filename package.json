@@ -10,7 +10,7 @@
     "dev": "node -e \"process.env.VP_ENV='development';require('./server.js')\"",
     "start": "node -e \"process.env.VP_ENV='production';require('./server.js')\"",
     "start:prod": "node -e \"process.env.VP_ENV='production';require('./server.js')\"",
-    "test": "node --test tests/domain/rules.test.js tests/rooms/roomTable.test.js tests/config/env.test.js"
+    "test": "node --test tests/domain/rules.test.js tests/rooms/roomTable.test.js tests/config/env.test.js tests/services/rankService.test.js"
   },
   "engines": {
     "node": ">=18"

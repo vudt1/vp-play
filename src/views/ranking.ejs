@@ -1,6 +1,39 @@
 <%- include('partials/header') %>
 
-<section class="ranking-page" x-data="rankApp()" x-init="init()">
+<%
+  function formatPoints(n) {
+    if (n == null || n === '') return '—';
+    return Number(n).toLocaleString('vi-VN');
+  }
+  function rowClass(row) {
+    if (!row.placeholder && row.rank === 1) return 'rank-gold rank-row';
+    if (!row.placeholder && row.rank === 2) return 'rank-silver rank-row';
+    if (!row.placeholder && row.rank === 3) return 'rank-bronze rank-row';
+    return 'rank-row';
+  }
+  function scoreClass(row) {
+    if (row.placeholder) return 'font-headline-md text-outline';
+    if (row.rank === 1) return 'font-display-lg text-tertiary';
+    if (row.rank === 2) return 'font-display-lg text-secondary';
+    if (row.rank === 3) return 'font-display-lg text-primary';
+    return 'font-headline-md text-on-surface';
+  }
+  function avatarClass(row) {
+    if (row.placeholder) return '';
+    if (row.rank === 1) return 'rank-avatar-gold';
+    if (row.rank === 2) return 'rank-avatar-silver';
+    if (row.rank === 3) return 'rank-avatar-bronze';
+    return '';
+  }
+  function badgeClass(row) {
+    if (row.rank === 1) return 'rank-badge-gold';
+    if (row.rank === 2) return 'rank-badge-silver';
+    if (row.rank === 3) return 'rank-badge-bronze';
+    return '';
+  }
+%>
+
+<section class="ranking-page" x-data="rankPage()" x-init="init()">
   <div
     class="flex flex-col items-center justify-center min-h-[50vh] gap-lg text-center"
     x-show="!authReady || (authReady && !profile && !devMode && !authError)"
@@ -44,37 +77,81 @@
   </div>
 
   <div x-show="profile" x-cloak>
-    <header class="mb-3xl flex flex-col gap-sm">
-      <h1 class="font-display-lg text-display-lg text-on-surface">Bảng xếp hạng</h1>
-      <p class="text-on-surface-variant font-body-lg">Tổng điểm mọi trò chơi · Top 10</p>
+    <header class="mb-2xl flex flex-col gap-sm">
+      <h1 class="font-display-lg text-display-lg text-on-surface">Bảng xếp hạng tổng điểm</h1>
+      <p class="font-body-md text-on-surface-variant max-w-2xl">
+        Vinh danh những cá nhân xuất sắc nhất trong hệ thống VP Play Portal. Thứ hạng dựa trên tổng điểm tích lũy qua các module game · Top 10.
+      </p>
     </header>
 
-    <div class="rounded-xl border border-border-muted bg-surface-container overflow-hidden">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="border-b border-border-muted text-outline font-label-sm text-label-sm">
-            <th class="px-xl py-md w-16">#</th>
-            <th class="px-xl py-md">Người chơi</th>
-            <th class="px-xl py-md text-right">Điểm</th>
-          </tr>
-        </thead>
-        <tbody>
-          <template x-for="(row, i) in rows" :key="row.pccuid">
-            <tr class="border-b border-border-muted/50 last:border-0" :class="i < 3 ? 'text-on-surface font-medium' : 'text-on-surface-variant'">
-              <td class="px-xl py-md font-label-sm" x-text="i + 1"></td>
-              <td class="px-xl py-md font-body-md" x-text="row.displayName"></td>
-              <td class="px-xl py-md font-body-md text-right tabular-nums" x-text="row.totalPoints"></td>
+    <div class="bg-surface-container-low rounded-xl border border-border-muted overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-surface-container-high border-b border-border-muted">
+            <tr>
+              <th class="px-xl py-lg font-label-sm text-on-surface-variant uppercase tracking-wider w-24">Hạng</th>
+              <th class="px-xl py-lg font-label-sm text-on-surface-variant uppercase tracking-wider">Người chơi</th>
+              <th class="px-xl py-lg font-label-sm text-on-surface-variant uppercase tracking-wider text-right">Điểm số</th>
             </tr>
-          </template>
-        </tbody>
-      </table>
-      <p class="px-xl py-lg text-outline font-body-md" x-show="rows.length === 0">Chưa có điểm.</p>
-      <div class="px-xl py-lg border-t border-border-muted">
-        <button
-          type="button"
-          class="border border-border-muted text-on-surface font-label-sm text-label-sm py-sm px-xl rounded-lg hover:border-primary active:scale-95"
-          @click="load()"
-        >Làm mới</button>
+          </thead>
+          <tbody class="divide-y divide-border-muted">
+            <% (ranks || []).forEach(function (row) {
+              var isTop3 = !row.placeholder && row.rank <= 3;
+              var avatarSize = isTop3 ? 'w-12 h-12' : 'w-10 h-10';
+              var topAvatar = avatarClass(row);
+              var topBadge = badgeClass(row);
+            %>
+            <tr
+              class="<%= rowClass(row) %>"
+              role="button"
+              tabindex="0"
+              aria-pressed="false"
+              data-rank="<%= row.rank %>"
+              @click="selectRank(<%= row.rank %>)"
+              @keydown.enter.prevent="selectRank(<%= row.rank %>)"
+              @keydown.space.prevent="selectRank(<%= row.rank %>)"
+              :class="{ 'is-selected': selectedRank === <%= row.rank %> }"
+              :aria-pressed="selectedRank === <%= row.rank %> ? 'true' : 'false'"
+            >
+              <td class="px-xl <%= isTop3 ? 'py-xl' : 'py-lg' %>">
+                <% if (isTop3) { %>
+                <div class="flex items-center justify-center w-10 h-10 rounded-full font-bold text-headline-md <%= topBadge %>"><%= row.rank %></div>
+                <% } else { %>
+                <div class="flex items-center justify-center">
+                  <span class="font-headline-md text-on-surface-variant"><%= row.rank %></span>
+                </div>
+                <% } %>
+              </td>
+              <td class="px-xl <%= isTop3 ? 'py-xl' : 'py-lg' %>">
+                <div class="flex items-center gap-lg">
+                  <% if (row.placeholder) { %>
+                  <div class="<%= avatarSize %> rounded-full bg-surface-container-highest flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-outline">person</span>
+                  </div>
+                  <div class="font-body-lg text-outline"><%= row.displayName %></div>
+                  <% } else if (isTop3) { %>
+                  <div
+                    class="<%= avatarSize %> rounded-full flex items-center justify-center shrink-0 font-semibold border <%= topAvatar %>"
+                    aria-hidden="true"
+                  ><%= row.initial %></div>
+                  <div class="font-headline-md text-on-surface"><%= row.displayName %></div>
+                  <% } else { %>
+                  <div
+                    class="<%= avatarSize %> rounded-full flex items-center justify-center shrink-0 font-semibold text-on-surface border border-border-muted"
+                    style="background-color: <%= row.avatarBg %>"
+                    aria-hidden="true"
+                  ><%= row.initial %></div>
+                  <div class="font-body-lg font-semibold text-on-surface"><%= row.displayName %></div>
+                  <% } %>
+                </div>
+              </td>
+              <td class="px-xl <%= isTop3 ? 'py-xl' : 'py-lg' %> text-right">
+                <div class="<%= scoreClass(row) %> tabular-nums"><%= formatPoints(row.totalPoints) %></div>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -82,18 +159,18 @@
 
 <style>[x-cloak]{display:none!important}</style>
 <script>
-  function rankApp() {
+  function rankPage() {
     const base = window.VP_BASE || '';
     function apiUrl(p) {
       return (window.vpAuth?.apiUrl || ((x) => base + x))(p);
     }
     return {
-      rows: [],
       profile: null,
       authError: null,
       authReady: false,
       devMode: false,
       devId: 'player1',
+      selectedRank: null,
 
       async init() {
         await (window.vpAuth?.ready || Promise.resolve());
@@ -104,12 +181,13 @@
         await this.applyAuthState();
       },
 
+      selectRank(rank) {
+        this.selectedRank = this.selectedRank === rank ? null : rank;
+      },
+
       async applyAuthState() {
         this.authError = window.vpAuth?.error || null;
         this.profile = window.vpAuth?.profile || null;
-        if (this.profile) {
-          await this.load();
-        }
       },
 
       async retryAuth() {
@@ -164,13 +242,6 @@
           window.dispatchEvent(new CustomEvent('vp-auth-changed'));
         }
         this.profile = profile;
-        await this.load();
-      },
-
-      async load() {
-        const res = await fetch(base + '/api/ranks?limit=10');
-        const data = await res.json();
-        this.rows = Array.isArray(data) ? data.slice(0, 10) : [];
       },
     };
   }

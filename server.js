@@ -8,6 +8,7 @@ const { env, withPublicPath, socketPath } = require('./src/config/env');
 const { getDb } = require('./src/config/db');
 const { syncFromRequest } = require('./src/auth/syncController');
 const { listRanks } = require('./src/controllers/rankController');
+const { getTopBoard } = require('./src/services/rankService');
 const { listModules, getLiveModule } = require('./src/modules/catalog');
 const { attachSockets } = require('./src/sockets');
 
@@ -64,7 +65,11 @@ app.get('/apps/:id', (req, res) => {
 });
 
 app.get('/ranking', (req, res) => {
-  res.render('ranking', { title: 'Bảng xếp hạng', navActive: 'ranking' });
+  res.render('ranking', {
+    title: 'Bảng xếp hạng',
+    navActive: 'ranking',
+    ranks: getTopBoard(10),
+  });
 });
 
 app.post('/api/auth/sync', syncFromRequest);

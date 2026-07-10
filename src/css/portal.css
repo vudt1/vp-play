@@ -116,12 +116,131 @@
     border-color: #abc7ff;
   }
 
+  /* Solid fills on every td (same color) — per-cell gradients create fake column borders */
+  .rank-gold > td {
+    background-color: rgba(255, 183, 130, 0.1);
+  }
+
+  .rank-silver > td {
+    background-color: rgba(183, 200, 226, 0.1);
+  }
+
+  .rank-bronze > td {
+    background-color: rgba(171, 199, 255, 0.1);
+  }
+
+  .rank-row {
+    @apply transition-colors duration-200 cursor-pointer;
+  }
+
+  .rank-row > td {
+    @apply transition-colors duration-200;
+    border-left: none;
+    border-right: none;
+  }
+
+  .rank-row:hover > td {
+    background-color: rgba(54, 57, 63, 0.55);
+  }
+
+  .rank-gold:hover > td {
+    background-color: rgba(255, 183, 130, 0.18);
+  }
+
+  .rank-silver:hover > td {
+    background-color: rgba(183, 200, 226, 0.18);
+  }
+
+  .rank-bronze:hover > td {
+    background-color: rgba(171, 199, 255, 0.18);
+  }
+
+  /* border-collapse drops tr borders — outer accent only on first cell */
+  .rank-row.is-selected > td {
+    background-color: rgba(69, 143, 255, 0.16);
+  }
+
+  .rank-row.is-selected > td:first-child {
+    box-shadow: inset 4px 0 0 #abc7ff;
+  }
+
+  .rank-row.is-selected > td:not(:first-child) {
+    box-shadow: none;
+  }
+
+  .rank-gold.is-selected > td {
+    background-color: rgba(255, 183, 130, 0.22);
+  }
+
+  .rank-gold.is-selected > td:first-child {
+    box-shadow: inset 4px 0 0 #ffb782;
+  }
+
+  .rank-silver.is-selected > td {
+    background-color: rgba(183, 200, 226, 0.22);
+  }
+
+  .rank-silver.is-selected > td:first-child {
+    box-shadow: inset 4px 0 0 #b7c8e2;
+  }
+
+  .rank-bronze.is-selected > td {
+    background-color: rgba(171, 199, 255, 0.22);
+  }
+
+  .rank-bronze.is-selected > td:first-child {
+    box-shadow: inset 4px 0 0 #abc7ff;
+  }
+
+  .rank-avatar-gold {
+    background-color: rgba(255, 183, 130, 0.28);
+    color: #ffb782;
+    border-color: rgba(255, 183, 130, 0.45);
+    box-shadow: 0 0 0 2px rgba(255, 183, 130, 0.35);
+  }
+
+  .rank-avatar-silver {
+    background-color: rgba(183, 200, 226, 0.28);
+    color: #b7c8e2;
+    border-color: rgba(183, 200, 226, 0.45);
+    box-shadow: 0 0 0 2px rgba(183, 200, 226, 0.35);
+  }
+
+  .rank-avatar-bronze {
+    background-color: rgba(171, 199, 255, 0.28);
+    color: #abc7ff;
+    border-color: rgba(171, 199, 255, 0.45);
+    box-shadow: 0 0 0 2px rgba(171, 199, 255, 0.35);
+  }
+
+  .rank-badge-gold {
+    background-color: rgba(255, 183, 130, 0.22);
+    color: #ffb782;
+    border: 1px solid rgba(255, 183, 130, 0.4);
+  }
+
+  .rank-badge-silver {
+    background-color: rgba(183, 200, 226, 0.22);
+    color: #b7c8e2;
+    border: 1px solid rgba(183, 200, 226, 0.4);
+  }
+
+  .rank-badge-bronze {
+    background-color: rgba(171, 199, 255, 0.22);
+    color: #abc7ff;
+    border: 1px solid rgba(171, 199, 255, 0.4);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .module-tile {
       transition: none;
     }
     .module-tile:hover {
       transform: none;
+    }
+    .rank-row,
+    .rank-row > td {
+      transition: none;
     }
   }
 }
