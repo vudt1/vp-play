@@ -9,17 +9,20 @@ cp .env.development.example .env.development
 # Bật Keycloak thật: bỏ AUTH_DEV_BYPASS và điền KEYCLOAK_*
 npm install
 npm run dev
+
+#trường hợp có thay đổi src/css/portal.css
+npm run build:css
 ```
 
 Mở `http://localhost:3000`.
 
 ## Scripts
 
-| Script | Env file | Ghi chú |
-| --- | --- | --- |
-| `npm run dev` | `.env.development` | Local; thường `AUTH_DEV_BYPASS=1` |
-| `npm start` | `.env.production` | Production |
-| `npm test` | — | Unit tests domain + roomTable + config |
+| Script        | Env file           | Ghi chú                                |
+| ------------- | ------------------ | -------------------------------------- |
+| `npm run dev` | `.env.development` | Local; thường `AUTH_DEV_BYPASS=1`      |
+| `npm start`   | `.env.production`  | Production                             |
+| `npm test`    | —                  | Unit tests domain + roomTable + config |
 
 ## Environment
 

@@ -1,50 +1,99 @@
 <%- include('partials/header') %>
 
-<section class="page ranking-page" x-data="rankApp()" x-init="init()">
-  <header class="page-header">
-    <h1 class="page-title">Bảng xếp hạng</h1>
-    <p class="page-sub muted">Tổng điểm mọi trò chơi · Top 10</p>
-  </header>
-
-  <div class="card auth-card" x-show="authReady && !profile && !devMode">
-    <p class="muted" x-show="!authError">Đang xác thực Keycloak…</p>
-    <p x-show="authError" x-text="authError"></p>
-    <button type="button" class="btn primary" x-show="authError" @click="retryAuth()">Thử lại</button>
+<section class="ranking-page" x-data="rankApp()" x-init="init()">
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg text-center"
+    x-show="!authReady || (authReady && !profile && !devMode && !authError)"
+    x-cloak
+  >
+    <p class="text-on-surface-variant font-body-lg">Đang xác thực Keycloak…</p>
   </div>
 
-  <div class="card" x-show="profile || devMode">
-    <table class="rank-table">
-      <thead>
-        <tr>
-          <th class="col-rank">#</th>
-          <th>Người chơi</th>
-          <th class="col-pts">Điểm</th>
-        </tr>
-      </thead>
-      <tbody>
-        <template x-for="(row, i) in rows" :key="row.pccuid">
-          <tr :class="{ 'is-top': i < 3 }">
-            <td class="col-rank" x-text="i + 1"></td>
-            <td x-text="row.displayName"></td>
-            <td class="col-pts" x-text="row.totalPoints"></td>
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg text-center max-w-md mx-auto"
+    x-show="authReady && !profile && !devMode && authError"
+    x-cloak
+  >
+    <p class="text-error font-body-lg" x-text="authError"></p>
+    <button
+      type="button"
+      class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg active:scale-95"
+      @click="retryAuth()"
+    >Thử lại</button>
+  </div>
+
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg max-w-md mx-auto w-full"
+    x-show="devMode && !profile"
+    x-cloak
+  >
+    <p class="text-on-surface font-body-lg text-center">Chế độ dev (AUTH_DEV_BYPASS): nhập pccuid giả.</p>
+    <p class="text-error font-body-md" x-show="authError" x-text="authError"></p>
+    <input
+      type="text"
+      id="rank-dev-id"
+      x-model="devId"
+      placeholder="pccuid"
+      class="w-full bg-surface-container-low border border-border-muted rounded-lg px-lg py-md text-body-md text-on-surface focus:outline-none focus:border-primary"
+    />
+    <button
+      type="button"
+      class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg active:scale-95"
+      @click="devLogin()"
+    >Vào portal</button>
+  </div>
+
+  <div x-show="profile" x-cloak>
+    <header class="mb-3xl flex flex-col gap-sm">
+      <h1 class="font-display-lg text-display-lg text-on-surface">Bảng xếp hạng</h1>
+      <p class="text-on-surface-variant font-body-lg">Tổng điểm mọi trò chơi · Top 10</p>
+    </header>
+
+    <div class="rounded-xl border border-border-muted bg-surface-container overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-border-muted text-outline font-label-sm text-label-sm">
+            <th class="px-xl py-md w-16">#</th>
+            <th class="px-xl py-md">Người chơi</th>
+            <th class="px-xl py-md text-right">Điểm</th>
           </tr>
-        </template>
-      </tbody>
-    </table>
-    <p class="muted empty-hint" x-show="rows.length === 0">Chưa có điểm.</p>
-    <button type="button" class="btn" @click="load()">Làm mới</button>
+        </thead>
+        <tbody>
+          <template x-for="(row, i) in rows" :key="row.pccuid">
+            <tr class="border-b border-border-muted/50 last:border-0" :class="i < 3 ? 'text-on-surface font-medium' : 'text-on-surface-variant'">
+              <td class="px-xl py-md font-label-sm" x-text="i + 1"></td>
+              <td class="px-xl py-md font-body-md" x-text="row.displayName"></td>
+              <td class="px-xl py-md font-body-md text-right tabular-nums" x-text="row.totalPoints"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <p class="px-xl py-lg text-outline font-body-md" x-show="rows.length === 0">Chưa có điểm.</p>
+      <div class="px-xl py-lg border-t border-border-muted">
+        <button
+          type="button"
+          class="border border-border-muted text-on-surface font-label-sm text-label-sm py-sm px-xl rounded-lg hover:border-primary active:scale-95"
+          @click="load()"
+        >Làm mới</button>
+      </div>
+    </div>
   </div>
 </section>
 
+<style>[x-cloak]{display:none!important}</style>
 <script>
   function rankApp() {
     const base = window.VP_BASE || '';
+    function apiUrl(p) {
+      return (window.vpAuth?.apiUrl || ((x) => base + x))(p);
+    }
     return {
       rows: [],
       profile: null,
       authError: null,
       authReady: false,
       devMode: false,
+      devId: 'player1',
 
       async init() {
         await (window.vpAuth?.ready || Promise.resolve());
@@ -58,7 +107,7 @@
       async applyAuthState() {
         this.authError = window.vpAuth?.error || null;
         this.profile = window.vpAuth?.profile || null;
-        if (this.profile || this.devMode) {
+        if (this.profile) {
           await this.load();
         }
       },
@@ -67,6 +116,55 @@
         this.authError = null;
         await window.vpAuth?.retrySync?.();
         await this.applyAuthState();
+      },
+
+      async devLogin() {
+        const id = (this.devId || 'player1').trim();
+        if (!id) {
+          this.authError = 'pccuid bắt buộc';
+          return;
+        }
+        this.authError = null;
+        let res;
+        try {
+          res = await fetch(apiUrl('/api/auth/sync'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${id}`,
+            },
+            body: JSON.stringify({ displayName: id }),
+          });
+        } catch (_) {
+          this.authError = 'Không đồng bộ được tài khoản';
+          return;
+        }
+        if (!res.ok) {
+          let message = 'Đồng bộ tài khoản thất bại';
+          try {
+            const body = await res.json();
+            if (body?.message) message = body.message;
+          } catch (_) {}
+          this.authError = message;
+          return;
+        }
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        const profile = {
+          pccuid: data.pccuid || id,
+          displayName: data.displayName || id,
+        };
+        if (window.vpAuth) {
+          window.vpAuth.token = id;
+          window.vpAuth.profile = profile;
+          window.vpAuth.error = null;
+          window.vpAuth.renderAuthSlot?.();
+          window.dispatchEvent(new CustomEvent('vp-auth-changed'));
+        }
+        this.profile = profile;
+        await this.load();
       },
 
       async load() {

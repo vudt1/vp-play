@@ -4,6 +4,9 @@
   "description": "Internal LAN entertainment portal with Tien Len Mien Nam",
   "main": "server.js",
   "scripts": {
+    "build:css": "tailwindcss -i ./src/css/portal.css -o ./public/css/portal.css --minify",
+    "predev": "npm run build:css",
+    "prestart": "npm run build:css",
     "dev": "node -e \"process.env.VP_ENV='development';require('./server.js')\"",
     "start": "node -e \"process.env.VP_ENV='production';require('./server.js')\"",
     "start:prod": "node -e \"process.env.VP_ENV='production';require('./server.js')\"",
@@ -20,5 +23,8 @@
     "express": "^5.2.1",
     "jose": "^6.2.3",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
   }
 }

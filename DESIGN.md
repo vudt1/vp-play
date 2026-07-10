@@ -1,139 +1,195 @@
 ---
-version: alpha
-name: vp-play-portal
-description: Dark product store for an internal LAN entertainment portal — quiet shell, icon tiles do the talking.
+name: Midnight Tech
 colors:
-  primary: "#1A2330"
-  secondary: "#8B9BB4"
-  accent: "#3D8BFD"
-  surface: "#141A22"
-  surface-elevated: "#1A2330"
-  background: "#0B0F14"
-  on-background: "#E7ECF3"
-  on-surface: "#E7ECF3"
-  border: "#2A3548"
-  muted: "#8B9BB4"
-  error: "#F07178"
-  success: "#2DD4A8"
+  surface: '#141A22'
+  surface-dim: '#101419'
+  surface-bright: '#36393f'
+  surface-container-lowest: '#0a0e13'
+  surface-container-low: '#181c21'
+  surface-container: '#1c2025'
+  surface-container-high: '#262a30'
+  surface-container-highest: '#31353b'
+  on-surface: '#e0e2ea'
+  on-surface-variant: '#c1c6d6'
+  inverse-surface: '#e0e2ea'
+  inverse-on-surface: '#2d3136'
+  outline: '#8b919f'
+  outline-variant: '#414753'
+  surface-tint: '#abc7ff'
+  primary: '#abc7ff'
+  on-primary: '#002f66'
+  primary-container: '#458fff'
+  on-primary-container: '#00285a'
+  inverse-primary: '#005cbc'
+  secondary: '#b7c8e2'
+  on-secondary: '#213146'
+  secondary-container: '#3a4a60'
+  on-secondary-container: '#a9b9d3'
+  tertiary: '#ffb782'
+  on-tertiary: '#4f2500'
+  tertiary-container: '#de7507'
+  on-tertiary-container: '#452000'
+  error: '#F07178'
+  on-error: '#690005'
+  error-container: '#93000a'
+  on-error-container: '#ffdad6'
+  primary-fixed: '#d7e2ff'
+  primary-fixed-dim: '#abc7ff'
+  on-primary-fixed: '#001b3f'
+  on-primary-fixed-variant: '#004590'
+  secondary-fixed: '#d3e4ff'
+  secondary-fixed-dim: '#b7c8e2'
+  on-secondary-fixed: '#0b1c30'
+  on-secondary-fixed-variant: '#38485d'
+  tertiary-fixed: '#ffdcc5'
+  tertiary-fixed-dim: '#ffb782'
+  on-tertiary-fixed: '#301400'
+  on-tertiary-fixed-variant: '#703800'
+  background: '#101419'
+  on-background: '#e0e2ea'
+  surface-variant: '#31353b'
+  surface-elevated: '#1A2330'
+  border-muted: '#2A3548'
+  success: '#2DD4A8'
+  text-on-dark: '#E7ECF3'
 typography:
-  display:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
-    fontSize: 32
-    fontWeight: 600
-    lineHeight: 1.15
-    letterSpacing: -0.02
-  headline:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
-    fontSize: 20
-    fontWeight: 600
-    lineHeight: 1.25
-    letterSpacing: -0.01
+  display-lg:
+    fontFamily: IBM Plex Sans
+    fontSize: 32px
+    fontWeight: '600'
+    lineHeight: 36px
+    letterSpacing: -0.02em
+  headline-md:
+    fontFamily: IBM Plex Sans
+    fontSize: 20px
+    fontWeight: '600'
+    lineHeight: 25px
+    letterSpacing: -0.01em
   body-lg:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
-    fontSize: 16
-    fontWeight: 400
-    lineHeight: 1.5
+    fontFamily: IBM Plex Sans
+    fontSize: 16px
+    fontWeight: '400'
+    lineHeight: 24px
   body-md:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
-    fontSize: 14
-    fontWeight: 400
-    lineHeight: 1.5
-  label:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
-    fontSize: 12
-    fontWeight: 500
-    letterSpacing: 0.02
+    fontFamily: IBM Plex Sans
+    fontSize: 14px
+    fontWeight: '400'
+    lineHeight: 21px
+  label-sm:
+    fontFamily: IBM Plex Sans
+    fontSize: 12px
+    fontWeight: '500'
+    lineHeight: 16px
+    letterSpacing: 0.02em
+  display-lg-mobile:
+    fontFamily: IBM Plex Sans
+    fontSize: 28px
+    fontWeight: '600'
+    lineHeight: 32px
 rounded:
-  xs: 6
-  sm: 8
-  md: 12
-  lg: 16
-  full: 9999
+  sm: 0.25rem
+  DEFAULT: 0.5rem
+  md: 0.75rem
+  lg: 1rem
+  xl: 1.5rem
+  full: 9999px
 spacing:
-  xs: 4
-  sm: 8
-  md: 12
-  lg: 16
-  xl: 24
-  2xl: 32
-  3xl: 48
-components:
-  button-primary:
-    backgroundColor: "{colors.accent}"
-    textColor: "#FFFFFF"
-    rounded: "{rounded.sm}"
-    padding: "10px 18px"
-  button-primary-hover:
-    backgroundColor: "#2F7AE5"
-  card:
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.lg}"
-  module-tile:
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.lg}"
-    padding: "{spacing.xl}"
+  xs: 4px
+  sm: 8px
+  md: 12px
+  lg: 16px
+  xl: 24px
+  2xl: 32px
+  3xl: 48px
+  max-width: 1120px
+  gutter: 20px
 ---
 
-## Overview
+## Implementation
 
-Internal LAN app store: cool near-black fields, elevated slate surfaces, one electric blue interaction color. Utility over marketing — employees open a Module and play. Atmosphere is a restrained product store at night, not neon arcade or cream craft boutique.
+Portal CSS is produced with **Tailwind CSS v3.4** (official CLI). Tokens below map to `tailwind.config.js` `theme.extend` and source `src/css/portal.css`. Runtime loads only the built `public/css/portal.css`. Fonts (IBM Plex Sans, Material Symbols) are self-hosted under `public/fonts/` — no Google Fonts or Tailwind CDN at runtime. See `docs/adr/0007-tailwind-portal-css.md`.
+
+## Brand & Style
+
+This design system embodies a **Corporate / Modern** aesthetic with a specific focus on a "Product Store at Night" atmosphere. It is designed for an internal LAN environment where utility and focus are paramount. The brand personality is professional, technical, and restrained, avoiding the visual noise of consumer gaming platforms or neon-heavy arcade interfaces.
+
+The visual narrative is built on a "quiet shell" philosophy: the container remains neutral and sophisticated, allowing vibrant icon tiles and content to command attention. The user experience should feel like a high-end, dark-mode professional suite—reliable, efficient, and calming.
+
+**Key Principles:**
+- **Restraint:** High-contrast interaction is reserved strictly for action points.
+- **Technical Precision:** Clean lines and structured grids replace organic or "soft" decorative elements.
+- **Atmospheric Depth:** Depth is created through subtle tonal shifts rather than aggressive lighting or gradients.
 
 ## Colors
 
-- **Background (#0B0F14):** page field — cool near-black, full viewport.
-- **Surface (#141A22) / Elevated (#1A2330):** cards, tiles, panels.
-- **Accent (#3D8BFD):** sole interaction driver — CTAs, links, active nav, tile hover border.
-- **Muted (#8B9BB4):** secondary text, phase labels, empty states.
-- **Border (#2A3548):** hairlines; prefer border over heavy shadow.
+The palette is strictly functional, adhering to a 60-30-10 distribution rule to maintain visual hierarchy and eye comfort in low-light environments.
 
-60% background/surface, 30% text hierarchy, 10% accent. Hover darkens accent by lightness only.
+- **Backgrounds:** A cool near-black (`#0B0F14`) serves as the foundation. Surfaces use slate tones (`#141A22`) to distinguish interactive areas from the canvas.
+- **Interaction (Accent):** Electric Blue (`#3D8BFD`) is the exclusive driver for interaction. It is used for primary buttons, active navigation states, and focus indicators.
+- **Typography & Borders:** Primary text uses a high-contrast off-white (`#E7ECF3`), while secondary metadata and borders use muted slate tones to reduce visual clutter.
+- **Status:** Semantic colors (Success/Error) are desaturated to align with the professional palette while remaining legible.
 
 ## Typography
 
-- **Display / Headline:** IBM Plex Sans 600 — section and page titles; technical, legible, not startup-display.
-- **Body:** IBM Plex Sans 400 at 14–16px — UI copy and table cells.
-- **Label:** same family 500, slightly tracked — metadata only when needed.
+The typography system uses **IBM Plex Sans** to convey a technical, engineered feel. It prioritizes legibility and structure over decorative flair.
 
-Scale ~1.25 (minor third). Desktop-first; fluid only where titles would overflow.
+- **Headlines:** Use Semi-Bold weights with slight negative letter-spacing to create a compact, authoritative look for section titles.
+- **Body:** Set at 14px and 16px with a generous 1.5x line height to ensure readability of Vietnamese diacritics and technical descriptions.
+- **Labels:** Utilized for metadata and category tags; these use a medium weight and increased letter-spacing for clarity at small sizes.
+- **Localization:** All type must support Vietnamese character sets natively, ensuring diacritics do not clash with line heights.
 
-## Layout
+## Layout & Spacing
 
-Max content width ~1120px, horizontal padding 24px. Catalog: CSS grid `auto-fill, minmax(220px, 1fr)`, gap 16–20px. Topbar sticky ≤72px, single-line nav. App surface stacks header → rooms → iframe. Section vertical rhythm 24–32px.
+The layout follows a **Fixed Grid** philosophy for the main content area to ensure a consistent, manageable reading width on large monitors.
+
+- **Grid System:** The module catalog uses a CSS Grid `auto-fill` pattern with a `minmax(220px, 1fr)` definition, allowing the number of columns to adapt based on screen real estate while maintaining a standard tile size.
+- **Vertical Rhythm:** Sections are separated by `32px` (2xl) or `48px` (3xl) to create distinct visual groupings.
+- **Breakpoints:**
+  - **Desktop:** 1120px max-width, center-aligned, 24px side margins.
+  - **Tablet:** Fluid width, 20px side margins, 3-column grid.
+  - **Mobile:** Fluid width, 16px side margins, 1 or 2-column grid.
+- **Navigation:** The top bar is pinned (sticky) with a height of `72px`, acting as a constant anchor for user orientation.
 
 ## Elevation & Depth
 
-Flat default. Raised = 1px border + optional soft shadow `0 8px 24px rgba(0,0,0,0.35)` on tile hover only. Overlay unused on portal shell. No stacked glass layers.
+This design system uses **Tonal Layers** supplemented by **Low-contrast Outlines** to define hierarchy. 
+
+- **Surface Tiers:** The background is the lowest level. Cards and tiles sit on the `surface` tier. Elements that require focus or are currently being interacted with sit on the `surface-elevated` tier.
+- **Borders:** Instead of heavy shadows, 1px hairlines (`#2A3548`) are the primary method of defining element boundaries.
+- **Interactive Depth:** On hover, tiles utilize a soft, deep ambient shadow (`0 8px 24px rgba(0,0,0,0.35)`) and a subtle 2px vertical lift to indicate interactivity.
+- **Focus:** Active states are highlighted with the primary accent color rather than an increase in elevation.
 
 ## Shapes
 
-Tiles max 16px radius; cards/buttons 8–12px. Pills only for rare tags if needed. Radius signals product store, not bubbly consumer app.
+The shape language is "Rounded" but controlled, avoiding the bubbly appearance of consumer apps to maintain a professional "Product Store" feel.
+
+- **Primary Radius:** `8px` (0.5rem) is the standard for buttons and small cards.
+- **Large Radius:** `16px` (1rem) is reserved for Module Tiles and main container masks.
+- **Pills:** Only used for status badges (e.g., "Mới", "Trực tuyến") to distinguish them from functional buttons.
+- **Consistency:** All interactive elements must share the same corner logic to appear as part of a unified suite.
 
 ## Components
 
-- **Buttons:** primary fill accent; ghost transparent + border; active scale ~0.97.
-- **Module tile:** large icon (rounded mask), title, one-line muted blurb; hover lift 2px + accent border.
-- **Room slot:** compact card inside app surface; seat list + join CTA.
-- **Rank table:** plain rows, bottom border; top rank weight slightly stronger.
-- **Inputs:** dark fill, border focus ring accent.
-- **Iframe chrome:** bordered frame, dark fill, no decorative chrome.
+### Buttons
+- **Primary:** Solid `#3D8BFD` fill with white text. No gradients.
+- **Ghost/Secondary:** Transparent background with a 1px `#2A3548` border. Text in `text-on-dark`.
+- **Interaction:** On click/tap, buttons should scale to `0.97` to provide tactile feedback.
 
-## Do's and Don'ts
+### Module Tiles
+- **Structure:** A large rounded icon (16px radius), followed by a Semi-Bold title and a muted single-line description.
+- **Hover State:** Lift + Shadow + Accent Border (1px).
 
-**Do:**
+### Input Fields
+- **Styling:** Darker fill than the surface (`#0B0F14`), subtle border.
+- **Focus:** The border transitions to the primary accent color.
 
-- Keep accent exclusive to interaction.
-- Use Module icon tiles as the signature moment; keep the rest quiet.
-- Write short Vietnamese product copy (Ứng dụng, Vào phòng, Xếp hạng).
-- Honor `prefers-reduced-motion` (disable lift/transition).
+### Room Slots
+- **Usage:** Compact list items within a room lobby. 
+- **Layout:** Horizontal arrangement showing player count, room status, and a "Vào phòng" (Join) CTA.
 
-**Don't:**
+### Rank Tables
+- **Styling:** Minimalist design with no vertical borders. 
+- **Typography:** The top three ranks may use a slightly heavier weight or a subtle tonal shift to denote status.
 
-- Don't use Inter, Roboto, Arial, Space Grotesk, Geist, or Instrument Serif as design choice.
-- Don't use purple-to-blue gradients or neon glow shadows.
-- Don't put Room lobby on the catalog home.
-- Don't redesign Phaser UI inside the iframe in this system.
-- Don't animate with `transition: all`.
-- Don't nest cards more than two levels deep.
-- Don't show coming-soon Module tiles.
-- Module icons: prefer 512px PNG; SVG placeholder acceptable until art is ready.
+### Iframe Chrome
+- **Standard:** External content is wrapped in a clean 1px border. No browser-style decorative chrome is permitted; the UI shell should remain invisible once a module is active.

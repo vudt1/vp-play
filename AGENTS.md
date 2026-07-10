@@ -23,8 +23,9 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 | Game client | Phaser 3 | `public/modules/tienlen/`, loaded in **iframe** |
 | DB | SQLite via `better-sqlite3` | WAL; file under `database/` |
 | Config | `dotenv` | `.env.development` / `.env.production` via `VP_ENV`; see `.env.*.example` |
+| Portal CSS | Tailwind CSS **v3.4** (CLI build) | Source `src/css/portal.css` → built `public/css/portal.css`; offline fonts under `public/fonts/` (see ADR 0007) |
 
-**Do not add** without an explicit human decision: ORM, Redis, formal FSM library, GraphQL, monorepo tooling, second mini-game framework, Tailwind/PostCSS bundler (portal CSS stays hand-written; Tailwind deferred).
+**Do not add** without an explicit human decision: ORM, Redis, formal FSM library, GraphQL, monorepo tooling, second mini-game framework, CDN Tailwind, or extra PostCSS plugins beyond the official Tailwind CLI.
 
 ## Repository map
 
@@ -43,8 +44,9 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 
 ## Commands
 
-- `npm run dev` — development (`VP_ENV=development` → `.env.development`)
-- `npm start` — production (`VP_ENV=production` → `.env.production`)
+- `npm run build:css` — Tailwind CLI: `src/css/portal.css` → `public/css/portal.css`
+- `npm run dev` — development (`predev` builds CSS; `VP_ENV=development` → `.env.development`)
+- `npm start` — production (`prestart` builds CSS; `VP_ENV=production` → `.env.production`)
 - `npm test` — unit tests (`node --test`)
 
 ## Deploy / APP_PREFIX
@@ -79,8 +81,8 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 - Socket event names: `room:*` and `hand:*`; keep payloads small.
 - Errors to client: structured `{ code, message }` on `hand:error` / join rejects; do not leak stack traces.
 - SQLite access only via config/services — no ad-hoc DB in socket files.
-- UI: keep portal and game separated (EJS/Alpine vs Phaser); shared knowledge is card id encoding and socket contract only. Portal CSS stays hand-written per `DESIGN.md` (no Tailwind unless human ADR).
-- New mini-app: add `public/modules/<id>/` + `icon.png` + one entry in `src/modules/catalog.js`.
+- UI: keep portal and game separated (EJS/Alpine vs Phaser); shared knowledge is card id encoding and socket contract only. Portal CSS is Tailwind v3.4 utilities + tokens in `tailwind.config.js` / `DESIGN.md` (ADR 0007); run `npm run build:css` after class changes.
+- New mini-app: add `public/modules/<id>/` + `icon.png` + one entry in `src/modules/catalog.js` (`status: 'live'` for playable; placeholders allowed for catalog mock only).
 
 ## Testing expectations
 

@@ -52,35 +52,103 @@
     window.vpAuth.error = null;
   }
 
+  function avatarInitial(profile) {
+    const raw = (profile?.displayName || profile?.pccuid || '?').trim();
+    if (!raw) return '?';
+    const ch = raw.charAt(0);
+    return ch.toLocaleUpperCase('vi');
+  }
+
+  let authMenuOpen = false;
+  let docClickBound = null;
+
+  function closeAuthMenu() {
+    authMenuOpen = false;
+    const menu = document.getElementById('auth-menu');
+    if (menu) menu.classList.add('hidden');
+    if (docClickBound) {
+      document.removeEventListener('click', docClickBound, true);
+      docClickBound = null;
+    }
+  }
+
   function renderAuthSlot() {
     const slot = document.getElementById('auth-slot');
     if (!slot) return;
+    closeAuthMenu();
     slot.replaceChildren();
 
     if (window.vpAuth.profile) {
-      const name = document.createElement('span');
-      name.className = 'auth-name';
-      name.textContent = window.vpAuth.profile.displayName || window.vpAuth.profile.pccuid;
-      name.title = window.vpAuth.profile.pccuid || '';
+      const label = window.vpAuth.profile.displayName || window.vpAuth.profile.pccuid || '';
+      const wrap = document.createElement('div');
+      wrap.className = 'relative';
 
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn ghost auth-logout';
-      btn.textContent = 'Đăng xuất';
-      btn.addEventListener('click', () => window.vpAuth.logout());
+      const avatarBtn = document.createElement('button');
+      avatarBtn.type = 'button';
+      avatarBtn.className =
+        'w-10 h-10 rounded-full bg-primary-container font-label-lg text-label-lg font-semibold flex items-center justify-center border border-border-muted hover:brightness-110 active:scale-95 transition-colors';
+      avatarBtn.setAttribute('aria-haspopup', 'menu');
+      avatarBtn.setAttribute('aria-expanded', 'false');
+      avatarBtn.setAttribute('aria-label', label ? `Tài khoản ${label}` : 'Tài khoản');
+      avatarBtn.title = label;
+      avatarBtn.textContent = avatarInitial(window.vpAuth.profile);
 
-      slot.append(name, btn);
+      const menu = document.createElement('div');
+      menu.id = 'auth-menu';
+      menu.setAttribute('role', 'menu');
+      menu.className =
+        'hidden absolute right-0 top-full mt-sm z-50 min-w-[10rem] rounded-lg border border-border-muted bg-surface-elevated shadow-lg py-xs';
+
+      const nameRow = document.createElement('div');
+      nameRow.className =
+        'px-lg py-sm text-on-surface font-body-md max-w-[14rem] truncate border-b border-border-muted';
+      nameRow.textContent = label;
+      nameRow.title = window.vpAuth.profile.pccuid || label;
+
+      const logoutBtn = document.createElement('button');
+      logoutBtn.type = 'button';
+      logoutBtn.setAttribute('role', 'menuitem');
+      logoutBtn.className =
+        'w-full text-left px-lg py-md text-on-surface font-body-md hover:bg-surface-bright transition-colors';
+      logoutBtn.textContent = 'Đăng xuất';
+      logoutBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeAuthMenu();
+        window.vpAuth.logout();
+      });
+
+      menu.append(nameRow, logoutBtn);
+
+      avatarBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        authMenuOpen = !authMenuOpen;
+        menu.classList.toggle('hidden', !authMenuOpen);
+        avatarBtn.setAttribute('aria-expanded', authMenuOpen ? 'true' : 'false');
+        if (authMenuOpen) {
+          docClickBound = (ev) => {
+            if (!wrap.contains(ev.target)) closeAuthMenu();
+          };
+          document.addEventListener('click', docClickBound, true);
+        } else if (docClickBound) {
+          document.removeEventListener('click', docClickBound, true);
+          docClickBound = null;
+        }
+      });
+
+      wrap.append(avatarBtn, menu);
+      slot.append(wrap);
       return;
     }
 
     if (window.vpAuth.error && !window.vpAuth.devMode) {
       const msg = document.createElement('span');
-      msg.className = 'auth-error muted';
+      msg.className = 'text-error font-body-md max-w-[12rem] truncate';
       msg.textContent = window.vpAuth.error;
 
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn ghost';
+      btn.className =
+        'border border-border-muted text-on-surface font-label-sm text-label-sm py-xs px-md rounded-lg hover:border-primary';
       btn.textContent = 'Thử lại';
       btn.addEventListener('click', () => window.vpAuth.retrySync());
 
@@ -98,7 +166,7 @@
     socketPath: socketIoPath,
     apiUrl,
     renderAuthSlot,
-    login: () => {},
+    login: () => { },
     beforeLogout: null,
     logout: () => {
       const run = () => {
@@ -109,14 +177,14 @@
       const hook = window.vpAuth.beforeLogout;
       if (typeof hook === 'function') {
         Promise.resolve(hook())
-          .catch(() => {})
+          .catch(() => { })
           .then(run);
         return;
       }
       run();
     },
-    refreshProfile: async () => {},
-    retrySync: async () => {},
+    refreshProfile: async () => { },
+    retrySync: async () => { },
   };
 
   if (cfg.authDevBypass) {
@@ -130,7 +198,7 @@
       const hook = window.vpAuth.beforeLogout;
       if (typeof hook === 'function') {
         Promise.resolve(hook())
-          .catch(() => {})
+          .catch(() => { })
           .then(run);
         return;
       }
@@ -232,7 +300,7 @@
     const hook = window.vpAuth.beforeLogout;
     if (typeof hook === 'function') {
       Promise.resolve(hook())
-        .catch(() => {})
+        .catch(() => { })
         .then(run);
       return;
     }
@@ -279,6 +347,6 @@
           notifyAuthChanged();
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, 20000);
 })();

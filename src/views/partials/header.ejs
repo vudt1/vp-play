@@ -1,21 +1,57 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html class="dark" lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><%= title %> · VP Play</title>
+  <title><%= title %> · VP Play Portal</title>
   <% if (appPrefix) { %><base href="<%= appPrefix %>/" /><% } %>
-  <link rel="stylesheet" href="<%= publicPath('/css/style.css') %>" />
+  <link rel="stylesheet" href="<%= publicPath('/css/portal.css') %>" />
   <script defer src="<%= publicPath('/vendor/alpine.min.js') %>"></script>
   <script src="<%= publicPath('/vendor/keycloak.min.js') %>"></script>
 </head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="<%= publicPath('/') %>">VP Play</a>
-    <nav class="topnav" aria-label="Chính">
-      <a href="<%= publicPath('/') %>" class="<%= typeof navActive !== 'undefined' && navActive === 'apps' ? 'is-active' : '' %>">Ứng dụng</a>
-      <a href="<%= publicPath('/ranking') %>" class="<%= typeof navActive !== 'undefined' && navActive === 'ranking' ? 'is-active' : '' %>">Xếp hạng</a>
-    </nav>
-    <div id="auth-slot"></div>
+<body class="bg-background min-h-screen flex flex-col">
+  <header class="bg-surface-container sticky top-0 w-full z-50 border-b border-border-muted">
+    <div class="flex justify-between items-center h-[72px] px-gutter max-w-max-width mx-auto w-full">
+      <div class="flex items-center gap-xl">
+        <a href="<%= publicPath('/') %>" class="font-display-lg text-display-lg text-primary no-underline">VP Play Portal</a>
+        <nav class="hidden md:flex items-center gap-xl font-body-lg text-body-lg" aria-label="Chính">
+          <a
+            href="<%= publicPath('/') %>"
+            class="<%= typeof navActive !== 'undefined' && navActive === 'apps' ? 'text-primary border-b-2 border-primary pb-1' : 'text-on-surface-variant hover:text-on-surface transition-colors duration-200' %>"
+          >Trang chủ</a>
+          <a
+            href="<%= publicPath('/ranking') %>"
+            class="<%= typeof navActive !== 'undefined' && navActive === 'ranking' ? 'text-primary border-b-2 border-primary pb-1' : 'text-on-surface-variant hover:text-on-surface transition-colors duration-200' %>"
+          >Bảng xếp hạng</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-lg">
+        <div class="hidden sm:flex bg-surface-container-low border border-border-muted rounded-full px-lg py-sm items-center gap-sm">
+          <span class="material-symbols-outlined text-outline text-[20px]">search</span>
+          <input
+            class="bg-transparent border-none outline-none focus:ring-0 text-body-md placeholder:text-outline w-48"
+            placeholder="Tìm kiếm ứng dụng..."
+            type="search"
+            aria-label="Tìm kiếm ứng dụng"
+            tabindex="-1"
+          />
+        </div>
+        <div class="flex items-center gap-md">
+          <button
+            type="button"
+            class="material-symbols-outlined text-on-surface-variant hover:bg-surface-bright p-sm rounded-full transition-colors active:scale-95"
+            aria-label="Thông báo"
+            disabled
+          >notifications</button>
+          <button
+            type="button"
+            class="material-symbols-outlined text-on-surface-variant hover:bg-surface-bright p-sm rounded-full transition-colors active:scale-95"
+            aria-label="Ví"
+            disabled
+          >account_balance_wallet</button>
+          <div id="auth-slot" class="relative flex items-center gap-md text-body-md"></div>
+        </div>
+      </div>
+    </div>
   </header>
-  <main class="container">
+  <main class="flex-grow max-w-max-width mx-auto px-gutter py-3xl w-full">

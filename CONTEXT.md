@@ -9,8 +9,8 @@ Người đã xác thực (Keycloak), định danh bằng `pccuid`.
 _Avoid_: Account, user account, client
 
 **Module**:
-Một mini-app được catalog trên portal (`/public/modules/<id>`), có icon và app surface riêng.
-_Avoid_: App store app, plugin, game (ambiguous with Hand)
+Một mini-app được catalog trên portal (`/public/modules/<id>`), có icon; chỉ Module **live** có app surface để chơi. Catalog có thể liệt kê entry placeholder (chưa chơi được).
+_Avoid_: App store app, plugin, game (ambiguous with Hand), app (dùng Module)
 
 **App surface**:
 Trang portal của một Module (chi tiết + play chrome); Module multiplayer chứa Room lobby và iframe tại đây.

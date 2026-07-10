@@ -1,106 +1,157 @@
 <%- include('partials/header') %>
 
 <section
-  class="page app-page"
+  class="app-page"
   x-data="portalApp()"
   x-init="init()"
   data-module-kind="<%= module.kind %>"
 >
-  <header class="app-header">
-    <a class="btn ghost back-link" href="<%= publicPath('/') %>" @click="leaveSurface($event)">← Ứng dụng</a>
-    <div class="app-header-main">
-      <div class="app-icon" data-initials="<%= module.name.slice(0, 2) %>">
-        <img
-          src="<%= publicPath(module.iconPath) %>"
-          alt=""
-          width="64"
-          height="64"
-          onerror="this.remove()"
-        />
-      </div>
-      <div>
-        <h1 class="page-title"><%= module.name %></h1>
-        <p class="page-sub muted"><%= module.blurb %></p>
-      </div>
-    </div>
-  </header>
-
-  <div class="card auth-card" x-show="authReady && !profile && !devMode">
-    <p class="muted" x-show="!authError">Đang xác thực Keycloak…</p>
-    <p x-show="authError" x-text="authError"></p>
-    <button type="button" class="btn primary" x-show="authError" @click="retryAuth()">Thử lại</button>
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg text-center"
+    x-show="!authReady || (authReady && !profile && !devMode && !authError)"
+    x-cloak
+  >
+    <p class="text-on-surface-variant font-body-lg">Đang xác thực Keycloak…</p>
   </div>
 
-  <div class="card auth-card" x-show="devMode && !profile">
-    <p>Chế độ dev (AUTH_DEV_BYPASS): nhập pccuid giả.</p>
-    <p class="muted" x-show="authError" x-text="authError"></p>
-    <input type="text" x-model="devId" placeholder="pccuid" />
-    <button type="button" class="btn primary" @click="devLogin()">Vào portal</button>
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg text-center max-w-md mx-auto"
+    x-show="authReady && !profile && !devMode && authError"
+    x-cloak
+  >
+    <p class="text-error font-body-lg" x-text="authError"></p>
+    <button
+      type="button"
+      class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg active:scale-95"
+      @click="retryAuth()"
+    >Thử lại</button>
   </div>
 
-  <template x-if="profile">
-    <div class="play-area">
-      <% if (module.kind === 'multiplayer') { %>
-      <div class="card">
-        <div class="row between card-head">
-          <h2 class="card-title">Phòng chơi</h2>
-          <span class="muted label-meta" x-show="seatedRoomId">Đang ngồi phòng <span x-text="seatedRoomId"></span></span>
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg max-w-md mx-auto w-full"
+    x-show="devMode && !profile"
+    x-cloak
+  >
+    <p class="text-on-surface font-body-lg text-center">Chế độ dev (AUTH_DEV_BYPASS): nhập pccuid giả.</p>
+    <p class="text-error font-body-md" x-show="authError" x-text="authError"></p>
+    <input
+      type="text"
+      x-model="devId"
+      placeholder="pccuid"
+      class="w-full bg-surface-container-low border border-border-muted rounded-lg px-lg py-md text-body-md text-on-surface focus:outline-none focus:border-primary"
+    />
+    <button
+      type="button"
+      class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg active:scale-95"
+      @click="devLogin()"
+    >Vào portal</button>
+  </div>
+
+  <div x-show="profile" x-cloak class="flex flex-col gap-xl">
+    <header class="flex flex-col gap-lg">
+      <a
+        class="inline-flex items-center gap-sm text-on-surface-variant hover:text-primary font-body-md w-fit no-underline"
+        href="<%= publicPath('/') %>"
+        @click="leaveSurface($event)"
+      >
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        Ứng dụng
+      </a>
+      <div class="flex items-center gap-lg">
+        <div class="w-16 h-16 rounded-xl bg-primary-container flex items-center justify-center shrink-0 overflow-hidden">
+          <img
+            src="<%= publicPath(module.iconPath) %>"
+            alt=""
+            width="64"
+            height="64"
+            class="w-full h-full object-contain"
+            onerror="this.remove()"
+          />
         </div>
-        <p class="join-error" x-show="joinError" x-text="joinError"></p>
-        <div class="rooms">
-          <template x-for="room in rooms" :key="room.id">
-            <div class="room-slot" :class="{ 'is-seated': inRoom(room.id) }">
-              <div class="room-title">Phòng <span x-text="room.id"></span></div>
-              <div class="muted room-meta" x-text="phaseLabel(room.phase) + ' · ' + room.seats.length + '/4'"></div>
-              <ul class="seat-list">
-                <template x-for="s in room.seats" :key="s.pccuid">
-                  <li x-text="s.displayName + (s.pccuid === room.hostPccuid ? ' (Host)' : '')"></li>
-                </template>
-              </ul>
-              <div class="room-actions">
-                <button
-                  type="button"
-                  class="btn primary"
-                  @click="joinRoom(room.id)"
-                  :disabled="!canJoin(room)"
-                  x-show="!inRoom(room.id)"
-                >Vào phòng</button>
-                <button
-                  type="button"
-                  class="btn ghost"
-                  @click="leaveRoom()"
-                  x-show="inRoom(room.id)"
-                >Rời phòng</button>
-              </div>
+        <div>
+          <h1 class="font-display-lg text-display-lg text-on-surface"><%= module.name %></h1>
+          <p class="text-on-surface-variant font-body-lg"><%= module.blurb %></p>
+        </div>
+      </div>
+    </header>
+
+    <% if (module.kind === 'multiplayer') { %>
+    <div class="rounded-xl border border-border-muted bg-surface-container p-xl">
+      <div class="flex items-center justify-between gap-md mb-lg">
+        <h2 class="font-headline-md text-headline-md text-on-surface">Phòng chơi</h2>
+        <span class="text-outline font-label-sm text-label-sm" x-show="seatedRoomId">
+          Đang ngồi phòng <span x-text="seatedRoomId"></span>
+        </span>
+      </div>
+      <p class="text-error font-body-md mb-md" x-show="joinError" x-text="joinError"></p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-lg">
+        <template x-for="room in rooms" :key="room.id">
+          <div
+            class="rounded-lg border border-border-muted bg-surface-container-low p-lg flex flex-col gap-sm"
+            :class="inRoom(room.id) ? 'border-primary' : ''"
+          >
+            <div class="font-headline-md text-body-lg text-on-surface">
+              Phòng <span x-text="room.id"></span>
             </div>
-          </template>
-        </div>
-      </div>
-      <% } %>
-
-      <div class="card game-shell" x-show="showGame">
-        <div class="row between card-head">
-          <h2 class="card-title">Bàn chơi</h2>
-          <button type="button" class="btn ghost" @click="closeGame()">Đóng bàn</button>
-        </div>
-        <iframe
-          id="module-frame"
-          src="<%= publicPath(module.entryPath) %>?base=<%= encodeURIComponent(appPrefix || '') %>"
-          title="<%= module.name %>"
-          class="game-frame"
-          @load="postAuthToGame()"
-        ></iframe>
-      </div>
-
-      <div class="card" x-show="!showGame && profile">
-        <button type="button" class="btn primary" @click="openGame()" :disabled="<%= module.kind === 'multiplayer' ? '!seatedRoomId' : 'false' %>">
-          <%= module.kind === 'multiplayer' ? 'Mở bàn (cần vào phòng)' : 'Mở' %>
-        </button>
+            <div class="text-outline font-label-sm text-label-sm" x-text="phaseLabel(room.phase) + ' · ' + room.seats.length + '/4'"></div>
+            <ul class="list-none p-0 m-0 flex flex-col gap-xs text-body-md text-on-surface-variant">
+              <template x-for="s in room.seats" :key="s.pccuid">
+                <li x-text="s.displayName + (s.pccuid === room.hostPccuid ? ' (Host)' : '')"></li>
+              </template>
+            </ul>
+            <div class="mt-auto pt-md flex flex-wrap gap-sm">
+              <button
+                type="button"
+                class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-lg rounded-lg disabled:opacity-40 active:scale-95"
+                @click="joinRoom(room.id)"
+                :disabled="!canJoin(room)"
+                x-show="!inRoom(room.id)"
+              >Vào phòng</button>
+              <button
+                type="button"
+                class="border border-border-muted text-on-surface font-label-sm text-label-sm py-sm px-lg rounded-lg hover:border-primary active:scale-95"
+                @click="leaveRoom()"
+                x-show="inRoom(room.id)"
+              >Rời phòng</button>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
-  </template>
+    <% } %>
+
+    <div class="rounded-xl border border-border-muted bg-surface-container p-xl" x-show="showGame">
+      <div class="flex items-center justify-between gap-md mb-lg">
+        <h2 class="font-headline-md text-headline-md text-on-surface">Bàn chơi</h2>
+        <button
+          type="button"
+          class="border border-border-muted text-on-surface font-label-sm text-label-sm py-sm px-lg rounded-lg hover:border-primary"
+          @click="closeGame()"
+        >Đóng bàn</button>
+      </div>
+      <iframe
+        id="module-frame"
+        src="<%= publicPath(module.entryPath) %>?base=<%= encodeURIComponent(appPrefix || '') %>"
+        title="<%= module.name %>"
+        class="w-full min-h-[min(70vh,640px)] h-[640px] rounded-lg border border-border-muted bg-surface-container-lowest"
+        @load="postAuthToGame()"
+      ></iframe>
+    </div>
+
+    <div class="rounded-xl border border-border-muted bg-surface-container p-xl" x-show="!showGame && profile">
+      <button
+        type="button"
+        class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg disabled:opacity-40 active:scale-95"
+        @click="openGame()"
+        :disabled="<%= module.kind === 'multiplayer' ? '!seatedRoomId' : 'false' %>"
+      >
+        <%= module.kind === 'multiplayer' ? 'Mở bàn (cần vào phòng)' : 'Mở' %>
+      </button>
+    </div>
+  </div>
 </section>
 
+<style>[x-cloak]{display:none!important}</style>
 <script src="<%= publicPath('/socket.io/socket.io.js') %>"></script>
 <script src="<%= publicPath('/js/portal-app.js') %>"></script>
 

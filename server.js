@@ -8,7 +8,7 @@ const { env, withPublicPath, socketPath } = require('./src/config/env');
 const { getDb } = require('./src/config/db');
 const { syncFromRequest } = require('./src/auth/syncController');
 const { listRanks } = require('./src/controllers/rankController');
-const { listModules, getModule } = require('./src/modules/catalog');
+const { listModules, getLiveModule } = require('./src/modules/catalog');
 const { attachSockets } = require('./src/sockets');
 
 getDb();
@@ -48,11 +48,11 @@ app.get('/', (req, res) => {
 });
 
 app.get('/apps/:id', (req, res) => {
-  const mod = getModule(req.params.id);
+  const mod = getLiveModule(req.params.id);
   if (!mod) {
     return res.status(404).render('not-found', {
       title: 'Không tìm thấy',
-      message: 'Module không tồn tại.',
+      message: 'Module không tồn tại hoặc chưa mở.',
       navActive: 'apps',
     });
   }

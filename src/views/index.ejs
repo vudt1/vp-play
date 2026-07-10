@@ -1,52 +1,181 @@
 <%- include('partials/header') %>
 
-<section class="page catalog-page" x-data="catalogPage()" x-init="init()">
-  <header class="page-header">
-    <h1 class="page-title">Ứng dụng</h1>
-    <p class="page-sub muted">Cổng giải trí nội bộ · chọn mini-app để chơi</p>
-  </header>
+<%
+  function toneClasses(tone) {
+    if (tone === 'primary') return { wrap: 'bg-primary-container text-on-primary-container', icon: 'text-on-primary-container' };
+    if (tone === 'secondary') return { wrap: 'bg-secondary-container text-on-secondary-container', icon: 'text-on-secondary-container' };
+    if (tone === 'tertiary') return { wrap: 'bg-tertiary-container text-on-tertiary-container', icon: 'text-on-tertiary-container' };
+    return { wrap: 'bg-surface-container-highest text-primary', icon: 'text-primary' };
+  }
+  function coverFallbackIcon(symbol) {
+    if (symbol === 'joystick' || symbol === 'sports_esports') return 'sports_esports';
+    if (symbol === 'menu_book' || symbol === 'auto_stories') return 'auto_stories';
+    return symbol || 'apps';
+  }
+%>
 
-  <div class="card auth-card" x-show="authReady && !profile && !devMode">
-    <p class="muted" x-show="!authError">Đang xác thực Keycloak…</p>
-    <p x-show="authError" x-text="authError"></p>
-    <button type="button" class="btn primary" x-show="authError" @click="retryAuth()">Thử lại</button>
+<section class="catalog-page" x-data="catalogPage()" x-init="init()">
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg text-center"
+    x-show="!authReady || (authReady && !profile && !devMode && !authError)"
+    x-cloak
+  >
+    <p class="text-on-surface-variant font-body-lg">Đang xác thực Keycloak…</p>
   </div>
 
-  <div class="card auth-card" x-show="devMode && !profile">
-    <p>Chế độ dev (AUTH_DEV_BYPASS): nhập pccuid giả.</p>
-    <p class="muted" x-show="authError" x-text="authError"></p>
-    <input type="text" x-model="devId" placeholder="pccuid" />
-    <button type="button" class="btn primary" @click="devLogin()">Vào portal</button>
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg text-center max-w-md mx-auto"
+    x-show="authReady && !profile && !devMode && authError"
+    x-cloak
+  >
+    <p class="text-error font-body-lg" x-text="authError"></p>
+    <button
+      type="button"
+      class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg active:scale-95"
+      @click="retryAuth()"
+    >Thử lại</button>
   </div>
 
-  <template x-if="profile">
-    <div class="module-grid" role="list">
-      <% modules.forEach(function (mod) { %>
+  <div
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-lg max-w-md mx-auto w-full"
+    x-show="devMode && !profile"
+    x-cloak
+  >
+    <p class="text-on-surface font-body-lg text-center">Chế độ dev (AUTH_DEV_BYPASS): nhập pccuid giả.</p>
+    <p class="text-error font-body-md" x-show="authError" x-text="authError"></p>
+    <input
+      type="text"
+      x-model="devId"
+      placeholder="pccuid"
+      class="w-full bg-surface-container-low border border-border-muted rounded-lg px-lg py-md text-body-md text-on-surface focus:outline-none focus:border-primary"
+    />
+    <button
+      type="button"
+      class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg active:scale-95"
+      @click="devLogin()"
+    >Vào portal</button>
+  </div>
+
+  <div x-show="profile" x-cloak>
+    <header class="mb-3xl flex flex-col gap-sm">
+      <h1 class="font-display-lg text-display-lg md:text-[60px] md:leading-[1.1] text-on-surface">Ứng dụng giải trí</h1>
+      <p class="text-on-surface-variant font-body-lg max-w-2xl">Khám phá thế giới giải trí nội bộ với các trò chơi, phim ảnh và âm nhạc chất lượng cao ngay tại VP Play Portal.</p>
+    </header>
+
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-xl" role="list">
+      <% modules.forEach(function (mod) {
+        var live = mod.status === 'live';
+        var featured = !!mod.featured && live;
+        var tone = toneClasses(mod.iconTone);
+        var href = live ? publicPath('/apps/' + mod.id) : null;
+        var coverIcon = coverFallbackIcon(mod.iconSymbol);
+      %>
+      <% if (featured) { %>
       <a
-        class="module-tile"
         role="listitem"
-        href="<%= publicPath('/apps/' + mod.id) %>"
+        href="<%= href %>"
+        class="group relative col-span-1 sm:col-span-2 lg:col-span-2 overflow-hidden rounded-xl border border-border-muted bg-surface-container module-tile no-underline text-inherit"
       >
-        <div class="module-tile-icon" data-initials="<%= mod.name.slice(0, 2) %>">
+        <div class="h-64 relative overflow-hidden">
+          <% if (mod.coverPath) { %>
           <img
-            src="<%= publicPath(mod.iconPath) %>"
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            src="<%= publicPath(mod.coverPath) %>"
             alt=""
-            width="96"
-            height="96"
             loading="lazy"
-            onerror="this.remove()"
           />
+          <% } else { %>
+          <div class="w-full h-full flex items-center justify-center bg-surface-container-high">
+            <span class="material-symbols-outlined text-primary text-[48px] opacity-20"><%= coverIcon %></span>
+          </div>
+          <% } %>
+          <div class="absolute inset-0 bg-gradient-to-t from-surface-container via-transparent to-transparent"></div>
+          <div class="absolute top-lg right-lg bg-primary-container text-on-primary-container font-label-sm text-label-sm px-md py-xs rounded-full">Nổi bật</div>
         </div>
-        <div class="module-tile-body">
-          <h2 class="module-tile-title"><%= mod.name %></h2>
-          <p class="module-tile-blurb muted"><%= mod.blurb %></p>
+        <div class="p-xl flex flex-col gap-sm">
+          <div class="flex items-center gap-md">
+            <div class="w-12 h-12 rounded-xl <%= tone.wrap %> flex items-center justify-center shrink-0">
+              <% if (mod.iconPath) { %>
+              <img src="<%= publicPath(mod.iconPath) %>" alt="" width="32" height="32" class="w-8 h-8 object-contain" onerror="this.remove()" />
+              <% } else { %>
+              <span class="material-symbols-outlined text-[32px]"><%= mod.iconSymbol || 'apps' %></span>
+              <% } %>
+            </div>
+            <div>
+              <h3 class="font-headline-md text-headline-md text-on-surface"><%= mod.name %></h3>
+              <p class="text-on-surface-variant font-body-md"><%= mod.blurb %></p>
+            </div>
+          </div>
+          <div class="mt-lg flex items-center justify-end">
+            <span class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg">Vào chơi ngay</span>
+          </div>
         </div>
       </a>
+      <% } else if (live) { %>
+      <a
+        role="listitem"
+        href="<%= href %>"
+        class="flex flex-col rounded-xl border border-border-muted bg-surface-container p-lg module-tile group no-underline text-inherit"
+      >
+        <div class="aspect-video mb-lg rounded-lg overflow-hidden bg-surface-container-high">
+          <% if (mod.coverPath) { %>
+          <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="<%= publicPath(mod.coverPath) %>" alt="" loading="lazy" />
+          <% } else { %>
+          <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container-highest">
+            <span class="material-symbols-outlined text-primary text-[48px] opacity-20"><%= coverIcon %></span>
+          </div>
+          <% } %>
+        </div>
+        <div class="flex items-center gap-md mb-sm">
+          <div class="w-10 h-10 rounded-xl <%= tone.wrap %> flex items-center justify-center shrink-0">
+            <% if (mod.iconPath) { %>
+            <img src="<%= publicPath(mod.iconPath) %>" alt="" width="24" height="24" class="w-6 h-6 object-contain" onerror="this.remove()" />
+            <% } else { %>
+            <span class="material-symbols-outlined"><%= mod.iconSymbol || 'apps' %></span>
+            <% } %>
+          </div>
+          <h3 class="font-headline-md text-headline-md text-on-surface"><%= mod.name %></h3>
+        </div>
+        <p class="text-on-surface-variant font-body-md line-clamp-1 mb-md"><%= mod.blurb %></p>
+        <div class="mt-auto pt-sm flex items-center justify-between">
+          <span class="text-outline font-label-sm text-label-sm"><%= mod.categoryLabel || 'Module' %></span>
+          <span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </div>
+      </a>
+      <% } else { %>
+      <div
+        role="listitem"
+        class="flex flex-col rounded-xl border border-border-muted bg-surface-container p-lg module-tile group opacity-90"
+        aria-disabled="true"
+      >
+        <div class="aspect-video mb-lg rounded-lg overflow-hidden bg-surface-container-high">
+          <% if (mod.coverPath) { %>
+          <img class="w-full h-full object-cover" src="<%= publicPath(mod.coverPath) %>" alt="" loading="lazy" />
+          <% } else { %>
+          <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container-highest">
+            <span class="material-symbols-outlined text-primary text-[48px] opacity-20"><%= coverIcon %></span>
+          </div>
+          <% } %>
+        </div>
+        <div class="flex items-center gap-md mb-sm">
+          <div class="w-10 h-10 rounded-xl <%= tone.wrap %> flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined"><%= mod.iconSymbol || 'apps' %></span>
+          </div>
+          <h3 class="font-headline-md text-headline-md text-on-surface"><%= mod.name %></h3>
+        </div>
+        <p class="text-on-surface-variant font-body-md line-clamp-1 mb-md"><%= mod.blurb %></p>
+        <div class="mt-auto pt-sm flex items-center justify-between">
+          <span class="text-outline font-label-sm text-label-sm"><%= mod.categoryLabel || 'Sắp có' %></span>
+          <span class="material-symbols-outlined text-outline">arrow_forward</span>
+        </div>
+      </div>
+      <% } %>
       <% }) %>
-    </div>
-  </template>
+    </section>
+  </div>
 </section>
 
+<style>[x-cloak]{display:none!important}</style>
 <script src="<%= publicPath('/js/portal-catalog.js') %>"></script>
 
 <%- include('partials/footer') %>
