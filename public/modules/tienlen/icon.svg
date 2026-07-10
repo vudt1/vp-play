@@ -1,9 +1,131 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Tiến Lên">
-  <rect width="512" height="512" rx="96" fill="#141A22"/>
-  <rect x="72" y="120" width="200" height="280" rx="16" fill="#E7ECF3" transform="rotate(-12 172 260)"/>
-  <rect x="156" y="100" width="200" height="280" rx="16" fill="#F5F7FA" transform="rotate(-4 256 240)"/>
-  <rect x="240" y="96" width="200" height="280" rx="16" fill="#FFFFFF" stroke="#2A3548" stroke-width="4"/>
-  <text x="300" y="200" font-family="system-ui,sans-serif" font-size="72" font-weight="700" fill="#0B0F14">3</text>
-  <path d="M300 230 l22 22 -22 54 -22-54 z" fill="#0B0F14"/>
-  <circle cx="400" cy="400" r="36" fill="#3D8BFD"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Radial Gradient (Casino Emerald Green felt vibe) -->
+    <radialGradient id="bg-glow" cx="50%" cy="85%" r="75%">
+      <stop offset="0%" stop-color="#12442e" />
+      <stop offset="60%" stop-color="#0a2318" />
+      <stop offset="100%" stop-color="#050a0e" />
+    </radialGradient>
+
+    <!-- Card Spotlight Aura -->
+    <radialGradient id="spotlight" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#228559" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#228559" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Golden Frame Accent Gradient -->
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe293" />
+      <stop offset="50%" stop-color="#c5a059" />
+      <stop offset="100%" stop-color="#806020" />
+    </linearGradient>
+
+    <!-- Drop Shadow Filter for Cards -->
+    <filter id="card-shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+
+    <!-- Card Symbol Definitions from Game Assets -->
+    <!-- 'A' in black (Clubs) -->
+    <symbol id="Rac" viewBox="-500 -500 1000 1000" preserveAspectRatio="xMinYMid" opacity="0.8">
+      <path d="M-270 460L-110 460M-200 450L0 -460L200 450M110 460L270 460M-120 130L120 130" stroke="#000000" fill="none" fill-opacity="1" stroke-width="110" />
+    </symbol>
+    
+    <!-- 'A' in red (Hearts/Diamonds) -->
+    <symbol id="Rad" viewBox="-500 -500 1000 1000" preserveAspectRatio="xMinYMid" opacity="0.8">
+      <path d="M-270 460L-110 460M-200 450L0 -460L200 450M110 460L270 460M-120 130L120 130" stroke="#e31b23" fill="none" fill-opacity="1" stroke-width="110" />
+    </symbol>
+
+    <!-- Heart Symbol (Red) -->
+    <symbol id="S1ah" viewBox="-600 -600 1200 1200" preserveAspectRatio="xMinYMid" opacity="0.8">
+      <path d="M0 -300C0 -400 100 -500 200 -500C300 -500 400 -400 400 -250C400 0 0 400 0 500C0 400 -400 0 -400 -250C-400 -400 -300 -500 -200 -500C-100 -500 0 -400 -0 -300" fill="#e31b23" fill-opacity="1" />
+    </symbol>
+
+    <!-- Diamond Symbol (Red) -->
+    <symbol id="S2ad" viewBox="-600 -600 1200 1200" preserveAspectRatio="xMinYMid" opacity="0.8">
+      <path d="M-400 0C-350 0 0 -450 0 -500C0 -450 350 0 400 0C350 0 0 450 0 500C0 450 -350 0 -400 0" fill="#e31b23" fill-opacity="1" />
+    </symbol>
+
+    <!-- Club/Clover Symbol (Black) -->
+    <symbol id="S3ac" viewBox="-600 -600 1200 1200" preserveAspectRatio="xMinYMid" opacity="0.8">
+      <path d="M30 150C35 385 85 400 130 500L-130 500C-85 400 -35 385 -30 150A10 10 0 0 0 -50 150A210 210 0 1 1 -124 -51A10 10 0 0 0 -110 -65A230 230 0 1 1 110 -65A10 10 0 0 0 124 -51A210 210 0 1 1 50 150A10 10 0 0 0 30 150" fill="#000000" fill-opacity="1" />
+    </symbol>
+
+    <!-- Complete Card Components -->
+    <!-- Ace of Clubs (DA) -->
+    <g id="card-DA">
+      <rect width="239" height="333" x="-119.5" y="-166.5" rx="14" ry="14" stroke="#dcdfe6" fill="#ffffff" fill-opacity="1" stroke-width="1.5" />
+      <use href="#Rac" height="39" x="-120" y="-158" />
+      <use href="#S3ac" height="42" x="-121" y="-119" />
+      <use href="#S3ac" height="140" x="-70" y="-70" />
+      <g transform="rotate(180)">
+        <use href="#Rac" height="39" x="-120" y="-158" />
+        <use href="#S3ac" height="42" x="-121" y="-119" />
+      </g>
+    </g>
+
+    <!-- Ace of Diamonds (HA) -->
+    <g id="card-HA">
+      <rect width="239" height="333" x="-119.5" y="-166.5" rx="14" ry="14" stroke="#dcdfe6" fill="#ffffff" fill-opacity="1" stroke-width="1.5" />
+      <use href="#Rad" height="39" x="-120" y="-158" />
+      <use href="#S2ad" height="42" x="-121" y="-119" />
+      <use href="#S2ad" height="140" x="-70" y="-70" />
+      <g transform="rotate(180)">
+        <use href="#Rad" height="39" x="-120" y="-158" />
+        <use href="#S2ad" height="42" x="-121" y="-119" />
+      </g>
+    </g>
+
+    <!-- Ace of Hearts (CA) -->
+    <g id="card-CA">
+      <rect width="239" height="333" x="-119.5" y="-166.5" rx="14" ry="14" stroke="#dcdfe6" fill="#ffffff" fill-opacity="1" stroke-width="1.5" />
+      <use href="#Rad" height="39" x="-120" y="-158" />
+      <use href="#S1ah" height="42" x="-121" y="-119" />
+      <use href="#S1ah" height="140" x="-70" y="-70" />
+      <g transform="rotate(180)">
+        <use href="#Rad" height="39" x="-120" y="-158" />
+        <use href="#S1ah" height="42" x="-121" y="-119" />
+      </g>
+    </g>
+  </defs>
+
+  <!-- Background layer (Rounded to fit standard portal app icon style) -->
+  <rect width="512" height="512" rx="96" fill="url(#bg-glow)" />
+
+  <!-- Center spotlight glow behind the cards -->
+  <ellipse cx="256" cy="256" rx="200" ry="150" fill="url(#spotlight)" />
+
+  <!-- Luxury Golden Border -->
+  <rect x="16" y="16" width="480" height="480" rx="80" fill="none" stroke="url(#gold-grad)" stroke-width="1.5" stroke-opacity="0.3" />
+  
+  <!-- Cards Presentation Fan Group (Static fanned layout, centered) -->
+  <!-- Pivot point is at x=256, y=415 -->
+  <g transform="translate(256, 415) scale(0.92)">
+    <!-- Ace of Clubs (Left Card) -->
+    <g transform="rotate(-18)">
+      <g filter="url(#card-shadow)">
+        <g transform="translate(0, -180)">
+          <use href="#card-DA" />
+        </g>
+      </g>
+    </g>
+
+    <!-- Ace of Diamonds (Middle Card) -->
+    <g transform="rotate(0) translate(0, -15)">
+      <g filter="url(#card-shadow)">
+        <g transform="translate(0, -180)">
+          <use href="#card-HA" />
+        </g>
+      </g>
+    </g>
+
+    <!-- Ace of Hearts (Right Card) -->
+    <g transform="rotate(18)">
+      <g filter="url(#card-shadow)">
+        <g transform="translate(0, -180)">
+          <use href="#card-CA" />
+        </g>
+      </g>
+    </g>
+  </g>
 </svg>

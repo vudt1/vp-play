@@ -115,10 +115,14 @@
             >
               <td class="px-xl <%= isTop3 ? 'py-xl' : 'py-lg' %>">
                 <% if (isTop3) { %>
-                <div class="flex items-center justify-center w-10 h-10 rounded-full font-bold text-headline-md <%= topBadge %>"><%= row.rank %></div>
+                <div class="flex items-center justify-center">
+                  <img src="<%= publicPath('/img/rank' + row.rank + '.svg') %>" alt="Top <%= row.rank %>" class="w-10 h-10 object-contain" />
+                </div>
                 <% } else { %>
                 <div class="flex items-center justify-center">
-                  <span class="font-headline-md text-on-surface-variant"><%= row.rank %></span>
+                  <div class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-highest border border-border-muted text-on-surface-variant font-semibold text-body-md">
+                    <%= row.rank %>
+                  </div>
                 </div>
                 <% } %>
               </td>

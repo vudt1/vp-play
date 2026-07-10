@@ -1,16 +1,37 @@
 <%- include('partials/header') %>
 
 <%
+  const fs = require('fs');
+  const path = require('path');
+
   function toneClasses(tone) {
     if (tone === 'primary') return { wrap: 'bg-primary-container text-on-primary-container', icon: 'text-on-primary-container' };
     if (tone === 'secondary') return { wrap: 'bg-secondary-container text-on-secondary-container', icon: 'text-on-secondary-container' };
     if (tone === 'tertiary') return { wrap: 'bg-tertiary-container text-on-tertiary-container', icon: 'text-on-tertiary-container' };
     return { wrap: 'bg-surface-container-highest text-primary', icon: 'text-primary' };
   }
+  
   function coverFallbackIcon(symbol) {
     if (symbol === 'joystick' || symbol === 'sports_esports') return 'sports_esports';
     if (symbol === 'menu_book' || symbol === 'auto_stories') return 'auto_stories';
     return symbol || 'apps';
+  }
+
+  function renderCover(mod, imgClasses) {
+    if (!mod.coverPath) return '';
+    
+    if (mod.coverPath.endsWith('.svg')) {
+      const svgPath = path.join(process.cwd(), 'public', mod.coverPath);
+      try {
+        const svgContent = fs.readFileSync(svgPath, 'utf8');
+        const cleanContent = svgContent.replace(/<\?xml.*?\?>/i, '');
+        return `<div class="${imgClasses} flex items-center justify-center overflow-hidden">${cleanContent}</div>`;
+      } catch (err) {
+        console.error('Failed to read inline SVG cover:', err);
+      }
+    }
+    
+    return `<img class="${imgClasses} object-cover" src="${publicPath(mod.coverPath)}" alt="" loading="lazy" />`;
   }
 %>
 
@@ -81,12 +102,7 @@
       >
         <div class="h-64 relative overflow-hidden">
           <% if (mod.coverPath) { %>
-          <img
-            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            src="<%= publicPath(mod.coverPath) %>"
-            alt=""
-            loading="lazy"
-          />
+          <%- renderCover(mod, 'w-full h-full transition-transform duration-500 group-hover:scale-110') %>
           <% } else { %>
           <div class="w-full h-full flex items-center justify-center bg-surface-container-high">
             <span class="material-symbols-outlined text-primary text-[48px] opacity-20"><%= coverIcon %></span>
@@ -123,7 +139,7 @@
       >
         <div class="aspect-video mb-lg rounded-lg overflow-hidden bg-surface-container-high">
           <% if (mod.coverPath) { %>
-          <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="<%= publicPath(mod.coverPath) %>" alt="" loading="lazy" />
+          <%- renderCover(mod, 'w-full h-full transition-transform duration-500 group-hover:scale-105') %>
           <% } else { %>
           <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container-highest">
             <span class="material-symbols-outlined text-primary text-[48px] opacity-20"><%= coverIcon %></span>
@@ -155,7 +171,7 @@
       >
         <div class="aspect-video mb-lg rounded-lg overflow-hidden bg-surface-container-high">
           <% if (mod.coverPath) { %>
-          <img class="w-full h-full object-cover" src="<%= publicPath(mod.coverPath) %>" alt="" loading="lazy" />
+          <%- renderCover(mod, 'w-full h-full') %>
           <% } else { %>
           <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container-highest">
             <span class="material-symbols-outlined text-primary text-[48px] opacity-20"><%= coverIcon %></span>

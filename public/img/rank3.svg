@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <!-- Outer metallic bronze gradient -->
+    <linearGradient id="bronzeOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E29063" />
+      <stop offset="50%" stop-color="#A5633E" />
+      <stop offset="100%" stop-color="#6E3C20" />
+    </linearGradient>
+    <!-- Inner face gradient -->
+    <radialGradient id="bronzeInner" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#FFC5A3" />
+      <stop offset="70%" stop-color="#BD744A" />
+      <stop offset="100%" stop-color="#804423" />
+    </radialGradient>
+    <!-- Shadow filter for depth -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+  
+  <!-- Outer Coin Border / Rim with Shadow -->
+  <circle cx="50" cy="50" r="45" fill="url(#bronzeOuter)" filter="url(#shadow)" />
+  
+  <!-- Inset Border / Groove -->
+  <circle cx="50" cy="50" r="41" fill="none" stroke="#FFD2B8" stroke-width="1.5" opacity="0.8" />
+  
+  <!-- Dotted Minted Inner Ring -->
+  <circle cx="50" cy="50" r="39" fill="none" stroke="#6E3C20" stroke-width="1" stroke-dasharray="2 3" opacity="0.5" />
+  
+  <!-- Inner Coin Face -->
+  <circle cx="50" cy="50" r="37" fill="url(#bronzeInner)" />
+  
+  <!-- Outer Rim Detail (Polished edge reflection) -->
+  <circle cx="50" cy="50" r="44.2" fill="none" stroke="#FFE9DC" stroke-width="0.8" opacity="0.6" />
+  
+  <!-- Professional 3D Faceted Star -->
+  <g>
+    <!-- Base Star Shadow/Rim -->
+    <polygon points="50,12 58.53,38.26 86.14,38.26 63.80,54.48 72.33,80.74 50,64.51 27.67,80.74 36.20,54.48 13.86,38.26 41.47,38.26" 
+             fill="none" 
+             stroke="#6E3C20" 
+             stroke-width="1.5"
+             stroke-linejoin="round"
+             transform="translate(0, 1)" />
+             
+    <!-- The 10 Facets -->
+    <polygon points="50,50 41.47,38.26 50,12" fill="#FFD8C2" />       <!-- T10: Top-Left Highlight -->
+    <polygon points="50,50 50,12 58.53,38.26" fill="#E8A282" />       <!-- T1: Top-Right Base -->
+    <polygon points="50,50 58.53,38.26 86.14,38.26" fill="#C47C5A" /> <!-- T2: Right-Top Base -->
+    <polygon points="50,50 86.14,38.26 63.80,54.48" fill="#955132" /> <!-- T3: Right-Bottom Shadow -->
+    <polygon points="50,50 63.80,54.48 72.33,80.74" fill="#804225" /> <!-- T4: Bottom-Right-Right Dark -->
+    <polygon points="50,50 72.33,80.74 50,64.51" fill="#51240F" />    <!-- T5: Bottom-Right-Left Darkest -->
+    <polygon points="50,50 50,64.51 27.67,80.74" fill="#683219" />    <!-- T6: Bottom-Left-Right Darkest -->
+    <polygon points="50,50 27.67,80.74 36.20,54.48" fill="#A86343" /> <!-- T7: Bottom-Left-Left Shadow -->
+    <polygon points="50,50 36.20,54.48 13.86,38.26" fill="#D88D6A" /> <!-- T8: Left-Bottom Base -->
+    <polygon points="50,50 13.86,38.26 41.47,38.26" fill="#F5BCA1" /> <!-- T9: Left-Top Highlight -->
+    
+    <!-- Star Edge Highlights -->
+    <polyline points="13.86,38.26 50,50 50,12" stroke="#FFFFFF" stroke-width="0.7" fill="none" opacity="0.6" />
+    <line x1="50" y1="50" x2="41.47" y2="38.26" stroke="#FFFFFF" stroke-width="0.5" opacity="0.4" />
+  </g>
+</svg>

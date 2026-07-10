@@ -86,6 +86,34 @@
   body {
     @apply bg-background text-on-surface font-sans antialiased min-h-screen;
   }
+
+  /* Custom scrollbar formatting matching dark theme */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-container-high rounded-full border-[3px] border-background;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-outline;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    @apply bg-primary;
+  }
+
+  /* Firefox Support */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.surface-container-high') theme('colors.background');
+  }
 }
 
 @layer components {
