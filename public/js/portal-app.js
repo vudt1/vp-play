@@ -339,11 +339,15 @@ function portalApp() {
     postAuthToGame() {
       const frame = document.getElementById('module-frame');
       if (!frame?.contentWindow || !this.token || !this.profile) return;
+      const profile = {
+        pccuid: this.profile.pccuid,
+        displayName: this.profile.displayName,
+      };
       frame.contentWindow.postMessage(
         {
           type: 'vp-auth',
-          token: this.token,
-          profile: this.profile,
+          token: String(this.token),
+          profile,
         },
         window.location.origin
       );
