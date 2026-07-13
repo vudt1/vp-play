@@ -1,13 +1,16 @@
 'use strict';
 
-const { THREE_SPADES } = require('./card');
 const { TYPES, classify } = require('./combination');
 
-function canLead(cardIds, { mustInclude3s = false } = {}) {
+function canLead(cardIds, { mustIncludeCardId = null } = {}) {
   const combo = classify(cardIds);
   if (!combo) return { ok: false, code: 'INVALID_COMBO', message: 'Not a legal combination' };
-  if (mustInclude3s && !combo.cards.includes(THREE_SPADES)) {
-    return { ok: false, code: 'MUST_INCLUDE_3S', message: 'First lead must include 3♠' };
+  if (mustIncludeCardId != null && !combo.cards.includes(mustIncludeCardId)) {
+    return {
+      ok: false,
+      code: 'MUST_INCLUDE_OPENING',
+      message: 'First lead must include the opening card',
+    };
   }
   return { ok: true, combo };
 }
@@ -58,9 +61,13 @@ function rankIsTwo(combo) {
   return Math.floor(combo.topCard / 4) === 12;
 }
 
-function validatePlay(cardIds, { lastCombo = null, freeLead = false, mustInclude3s = false } = {}) {
+function validatePlay(cardIds, {
+  lastCombo = null,
+  freeLead = false,
+  mustIncludeCardId = null,
+} = {}) {
   if (freeLead || !lastCombo) {
-    return canLead(cardIds, { mustInclude3s });
+    return canLead(cardIds, { mustIncludeCardId });
   }
   return canBeat(lastCombo, cardIds);
 }

@@ -58,7 +58,7 @@ app.get('/apps/:id', (req, res) => {
       navActive: 'apps',
     });
   }
-  return res.render('app', {
+  return res.render(mod.surfaceView || 'app_tienlen', {
     title: mod.name,
     module: mod,
     navActive: 'apps',

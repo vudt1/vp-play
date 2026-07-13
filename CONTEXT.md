@@ -36,6 +36,14 @@ _Avoid_: Trick (Western card sense), round
 Tổ hợp bài hợp lệ: rác, đôi, sám, tứ quý, sảnh (≥3, không 2), ba/bốn đôi thông (không 2).
 _Avoid_: Hand, set, meld
 
+**Opening lead**:
+Lượt free lead đầu tiên của một Hand. Opener là người cầm **opening card** (card id nhỏ nhất trong các tay đã chia); Combo mở bắt buộc gồm lá đó. Với đủ 4 người (hết 52 lá) opening card luôn là 3♠.
+_Avoid_: First turn only, 3♠ rule (as the sole name)
+
+**Opening card**:
+Lá có card id nhỏ nhất trong mọi tay đã deal của Hand; public state có thể expose `openingCardId` và `mustIncludeOpening` cho đến khi lượt mở thành công.
+_Avoid_: 3 of spades (as the only name), seed card
+
 **Beat**:
 Chặn được combo trước: cùng kiểu và top cao hơn, hoặc special (tứ quý / đôi thông vs 2, v.v.).
 _Avoid_: Cut, chặn (in code identifiers)

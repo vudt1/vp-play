@@ -4,45 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tiến Lên · VP Play</title>
-  <style>
-    html, body { margin: 0; height: 100%; background: #0b1018; color: #e7ecf3; font-family: "Segoe UI", system-ui, sans-serif; }
-    #ui {
-      position: absolute; inset: 0; display: grid;
-      grid-template-rows: auto 1fr auto auto;
-      pointer-events: none;
-    }
-    #ui > * { pointer-events: auto; }
-    .bar { padding: 0.5rem 0.75rem; background: rgba(15,20,25,0.9); border-bottom: 1px solid #2a3548; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-    .bar.bottom { border-bottom: 0; border-top: 1px solid #2a3548; }
-    .muted { color: #8b9bb4; font-size: 0.85rem; }
-    .btn {
-      border: 1px solid #2a3548; background: #243044; color: #e7ecf3;
-      border-radius: 8px; padding: 0.4rem 0.8rem; cursor: pointer; font: inherit;
-    }
-    .btn.primary { background: #3d8bfd; border-color: transparent; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    #status { flex: 1; }
-    #error { color: #f07178; min-height: 1.2em; padding: 0 0.75rem; font-size: 0.9rem; }
-    #table { position: relative; min-height: 180px; padding: 0.75rem; }
-    .seat {
-      display: inline-block; min-width: 120px; margin: 0.25rem;
-      padding: 0.5rem 0.65rem; border-radius: 10px; background: #1a2332; border: 1px solid #2a3548;
-    }
-    .seat.turn { border-color: #2dd4a8; box-shadow: 0 0 0 1px #2dd4a8; }
-    .seat.host::after { content: " · Host"; color: #8b9bb4; font-size: 0.8rem; }
-    #hand {
-      display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0.5rem 0.75rem 0.75rem;
-      min-height: 110px; align-items: flex-end; justify-content: center;
-    }
-    .card-btn {
-      width: 64px; height: 90px; padding: 0; border: 2px solid transparent;
-      border-radius: 8px; background: #fff; cursor: pointer; overflow: hidden;
-    }
-    .card-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .card-btn.selected { border-color: #3d8bfd; transform: translateY(-8px); }
-    #last { text-align: center; min-height: 2rem; color: #8b9bb4; font-size: 0.9rem; }
-    #phaser-host { position: absolute; inset: 0; opacity: 0.15; pointer-events: none; }
-  </style>
+  <link rel="stylesheet" href="css/cardgame.css" />
   <script>
     (function () {
       function sanitizeBase(raw) {
@@ -65,37 +27,30 @@
   </script>
 </head>
 <body>
-  <div id="phaser-host"></div>
-  <div id="ui">
-    <div class="bar">
-      <strong>Tiến Lên Miền Nam</strong>
-      <span id="status" class="muted">Chờ xác thực từ portal…</span>
-      <button class="btn" id="btn-start" disabled>Start (Host)</button>
-      <button class="btn" id="btn-leave">Rời phòng</button>
-    </div>
-    <div id="table"></div>
-    <div id="last"></div>
-    <div id="error"></div>
-    <div id="hand"></div>
-    <div class="bar bottom">
-      <button class="btn primary" id="btn-play" disabled>Đánh</button>
-      <button class="btn" id="btn-pass" disabled>Bỏ lượt</button>
-      <span class="muted" id="me"></span>
-    </div>
-  </div>
+  <div id="game-root"></div>
+  <script src="js/libs/pixi.min.js"></script>
+  <script src="js/libs/gsap.min.js"></script>
+  <script src="js/libs/howler.min.js"></script>
   <script>
     (function () {
       var base = window.VP_BASE || '';
-      function loadScript(src) {
+      function loadScript(src, onload) {
         var s = document.createElement('script');
         s.src = src;
+        if (onload) s.onload = onload;
         document.body.appendChild(s);
       }
-      loadScript(base + '/socket.io/socket.io.js');
-      loadScript(base + '/vendor/phaser.min.js');
-      var game = document.createElement('script');
-      game.src = './game.js';
-      document.body.appendChild(game);
+      loadScript(base + '/socket.io/socket.io.js', function () {
+        loadScript('js/sounds.js', function () {
+          loadScript('js/card.js', function () {
+            loadScript('js/deck.js', function () {
+              loadScript('js/animations.js', function () {
+                loadScript('js/game.js');
+              });
+            });
+          });
+        });
+      });
     })();
   </script>
 </body>

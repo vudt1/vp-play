@@ -8,6 +8,7 @@ const MODULES = [
     iconPath: '/modules/tienlen/icon.svg',
     coverPath: '/img/catalog/tienlen-cover.svg',
     entryPath: '/modules/tienlen/index.html',
+    surfaceView: 'app_tienlen',
     kind: 'multiplayer',
     status: 'live',
     featured: true,

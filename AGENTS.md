@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository. Read this file bef
 
 ## Project
 
-**VP Play** is a small internal LAN entertainment portal: Express portal (Module catalog + app surfaces) + Socket.IO realtime + mini-apps under `public/modules/` (first: **Tiến Lên Miền Nam** / Phaser). Multiplayer scale for Tiến Lên: **3 fixed rooms**, **max 4 players per room**, **2–4 humans** (no bots).
+**VP Play** is a small internal LAN entertainment portal: Express portal (Module catalog + app surfaces) + Socket.IO realtime + mini-apps under `public/modules/` (first: **Tiến Lên Miền Nam** / PixiJS). Multiplayer scale for Tiến Lên: **3 fixed rooms**, **max 4 players per room**, **2–4 humans** (no bots).
 
 Product research lives in `spec/` (`codebase_init.md`, `logic_game.md`). Runtime code is not there. Design system: `DESIGN.md`.
 
@@ -20,7 +20,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 | Client portal | Alpine.js | Catalog, app surface, ranking |
 | Auth | Keycloak-js (browser) + JWT verify (server) | Id: `KEYCLOAK_ID_CLAIM` (default `pccuid`); display: `KEYCLOAK_DISPLAY_NAME_CLAIM` (default `preferred_username`) |
 | Realtime | Socket.IO | Room/hand events; auth on handshake |
-| Game client | Phaser 3 | `public/modules/tienlen/`, loaded in **iframe** |
+| Game client | PixiJS v8 + GSAP 3 + Howler | `public/modules/tienlen/` (local `js/libs/`, letterbox 1920×1080); loaded in **iframe** |
 | DB | SQLite via `better-sqlite3` | WAL; file under `database/` |
 | Config | `dotenv` | `.env.development` / `.env.production` via `VP_ENV`; see `.env.*.example` |
 | Portal CSS | Tailwind CSS **v3.4** (CLI build) | Source `src/css/portal.css` → built `public/css/portal.css`; offline fonts under `public/fonts/` (see ADR 0007) |
@@ -35,7 +35,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 - `src/rooms/roomTable.js` — in-memory rooms/seats/hand phase (deep module; test without Socket)
 - `src/sockets/` — thin adapters: auth middleware, event names, broadcast
 - `src/auth/`, `src/services/`, `src/controllers/` — Keycloak verify, user sync, ranks
-- `src/views/` — EJS portal templates (`/` catalog, `/apps/:id` app surface, `/ranking`)
+- `src/views/` — EJS portal templates (`/` catalog, `/apps/:id` app surface e.g. `app_tienlen`, `/ranking`)
 - `public/` — CSS + mini-app static assets (`public/modules/<id>/`, icon at `icon.png`)
 - `assets/card/svg/` — source card SVGs (copy or link into game assets)
 - `tests/` — prefer domain + roomTable unit tests
@@ -62,7 +62,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 2. **Seams**: Socket.IO and Express are **adapters**. Game rules and room transitions live outside them. Do not put combo validation only inside socket handlers.
 3. **One adapter ≠ port**: only introduce a port/interface when two adapters exist (e.g. real JWT verifier + test stub).
 4. **No formal FSM library.** Use `phase` enums (`idle | waiting | playing | settling`) and explicit handler guards.
-5. **MVP rules only (Classic core):** singles/pairs/triples/quads, straights (≥3, no 2s), 3/4 consecutive pairs (no 2s), same-shape beat, specials (tứ quý / 3 đôi thông vs single 2; 4 đôi thông vs single|pair 2 or tứ quý), **in-turn only**. Every hand opens with **3♠** holder. Full finish ranking + simple points.
+5. **MVP rules only (Classic core):** singles/pairs/triples/quads, straights (≥3, no 2s), 3/4 consecutive pairs (no 2s), same-shape beat, specials (tứ quý / 3 đôi thông vs single 2; 4 đôi thông vs single|pair 2 or tứ quý), **in-turn only**. **Opening lead:** holder of lowest dealt card id must include that card (4 players ⇒ always 3♠). Full finish ranking + simple points.
 6. **Explicit non-goals:** tới trắng, đền bài, thối 3 bích, cóng multipliers, AI autoplay, out-of-turn chặt, ELO, spectators, mid-hand DB persistence.
 7. **Auth path:** Portal owns Keycloak. With `AUTH_DEV_BYPASS=0`, all portal pages (`/`, `/apps/:id`, `/ranking`) use `login-required` and must succeed `POST /api/auth/sync` before useful UI; access token may be cached in `localStorage` (`vp_access_token`). Display name in header `#auth-slot`. Game iframe receives `{ type: 'vp-auth', token, profile }` via **postMessage** (same origin). Socket uses token; server verifies JWKS. **Do not** init Keycloak inside the iframe.
 8. **Portal IA:** home `/` = Module catalog only; multiplayer Room lobby + iframe live on app surface `/apps/:id`. Leaving the app surface (Back / navigate away) must emit `room:leave` when seated. Ranking `/ranking` = global top 10 by raw `totalPoints` (all Modules share one sum via `applyPoints`).
@@ -81,7 +81,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 - Socket event names: `room:*` and `hand:*`; keep payloads small.
 - Errors to client: structured `{ code, message }` on `hand:error` / join rejects; do not leak stack traces.
 - SQLite access only via config/services — no ad-hoc DB in socket files.
-- UI: keep portal and game separated (EJS/Alpine vs Phaser); shared knowledge is card id encoding and socket contract only. Portal CSS is Tailwind v3.4 utilities + tokens in `tailwind.config.js` / `DESIGN.md` (ADR 0007); run `npm run build:css` after class changes.
+- UI: keep portal and game separated (EJS/Alpine vs Pixi canvas Module); shared knowledge is card id encoding and socket contract only. Tiến Lên client vendors Pixi/GSAP/Howler under `public/modules/tienlen/js/libs/` (no CDN); Socket.IO client still loads from server path (ADR 0008). Portal CSS is Tailwind v3.4 utilities + tokens in `tailwind.config.js` / `DESIGN.md` (ADR 0007); run `npm run build:css` after class changes.
 - New mini-app: add `public/modules/<id>/` + `icon.png` + one entry in `src/modules/catalog.js` (`status: 'live'` for playable; placeholders allowed for catalog mock only).
 
 ## Testing expectations

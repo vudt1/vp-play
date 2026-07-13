@@ -1,6 +1,5 @@
 'use strict';
 
-const { THREE_SPADES } = require('../domain/card');
 const { validatePlay } = require('../domain/playRules');
 const { deal } = require('../domain/deal');
 const { pointsForFinish } = require('../domain/scoring');
@@ -137,8 +136,16 @@ function createRoomTable(options = {}) {
       active.push(seat.pccuid);
     });
 
-    let opener = active.find((id) => handMap[id].includes(THREE_SPADES));
-    if (!opener) opener = active[0];
+    let openingCardId = Infinity;
+    let opener = active[0];
+    for (const id of active) {
+      for (const c of handMap[id]) {
+        if (c < openingCardId) {
+          openingCardId = c;
+          opener = id;
+        }
+      }
+    }
 
     room.phase = 'playing';
     room.hand = {
@@ -149,7 +156,8 @@ function createRoomTable(options = {}) {
       lastCombo: null,
       lastPlayer: null,
       freeLead: true,
-      mustInclude3s: true,
+      openingCardId,
+      mustIncludeOpening: true,
       ringPassed: new Set(),
       turnDeadline: Date.now() + turnTimeoutMs,
     };
@@ -175,7 +183,8 @@ function createRoomTable(options = {}) {
     const result = validatePlay(cards, {
       lastCombo: hand.freeLead ? null : hand.lastCombo,
       freeLead: hand.freeLead,
-      mustInclude3s: hand.mustInclude3s && hand.freeLead,
+      mustIncludeCardId:
+        hand.mustIncludeOpening && hand.freeLead ? hand.openingCardId : null,
     });
     if (!result.ok) return err(result.code, result.message);
 
@@ -183,7 +192,7 @@ function createRoomTable(options = {}) {
     hand.lastCombo = result.combo;
     hand.lastPlayer = pccuid;
     hand.freeLead = false;
-    hand.mustInclude3s = false;
+    hand.mustIncludeOpening = false;
     hand.ringPassed = new Set();
     hand.turnDeadline = Date.now() + turnTimeoutMs;
 
@@ -290,8 +299,12 @@ function createRoomTable(options = {}) {
     const cards = hand.hands[hand.currentTurn];
     if (!cards || cards.length === 0) return;
     let pick = [cards[0]];
-    if (hand.mustInclude3s && cards.includes(THREE_SPADES)) {
-      pick = [THREE_SPADES];
+    if (
+      hand.mustIncludeOpening &&
+      hand.openingCardId != null &&
+      cards.includes(hand.openingCardId)
+    ) {
+      pick = [hand.openingCardId];
     }
     play(hand.currentTurn, pick);
   }
@@ -373,7 +386,8 @@ function createRoomTable(options = {}) {
         ? {
             currentTurn: hand.currentTurn,
             freeLead: hand.freeLead,
-            mustInclude3s: hand.mustInclude3s,
+            openingCardId: hand.openingCardId,
+            mustIncludeOpening: hand.mustIncludeOpening,
             lastCombo: hand.lastCombo
               ? { type: hand.lastCombo.type, cards: hand.lastCombo.cards, topCard: hand.lastCombo.topCard, length: hand.lastCombo.length, pairCount: hand.lastCombo.pairCount }
               : null,
