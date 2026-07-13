@@ -31,14 +31,17 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 
 - `server.js` — process entry: HTTP server, view engine, static, Socket.IO attach
 - `src/modules/catalog.js` — static Module catalog (id, name, blurb, icon, entry, kind)
-- `src/domain/` — **pure** card/combo/rules/deal/scoring (no I/O, no Socket, no Express)
-- `src/rooms/roomTable.js` — in-memory rooms/seats/hand phase (deep module; test without Socket)
-- `src/sockets/` — thin adapters: auth middleware, event names, broadcast
+- `src/modules/<id>/` — **server side of a multiplayer Module** (namespaced by catalog id)
+  - `src/modules/tienlen/domain/` — pure card/combo/rules/deal/scoring (no I/O)
+  - `src/modules/tienlen/rooms/roomTable.js` — in-memory rooms/seats/hand phase
+  - `src/modules/tienlen/sockets.js` — Module Socket.IO adapter (`room:*` / `hand:*`)
+  - `src/modules/tienlen/index.js` — barrel re-export for the Module server package
+- `src/sockets/` — portal Socket.IO hub: JWT auth middleware + attach per-Module adapters
 - `src/auth/`, `src/services/`, `src/controllers/` — Keycloak verify, user sync, ranks
 - `src/views/` — EJS portal templates (`/` catalog, `/apps/:id` app surface e.g. `app_tienlen`, `/ranking`)
 - `public/` — CSS + mini-app static assets (`public/modules/<id>/`, icon at `icon.png`)
 - `assets/card/svg/` — source card SVGs (copy or link into game assets)
-- `tests/` — prefer domain + roomTable unit tests
+- `tests/modules/<id>/` — prefer Module domain + roomTable unit tests
 - `spec/` — design notes only
 - `DESIGN.md` — portal design tokens / UI contract
 
@@ -58,8 +61,8 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 
 ## Architecture rules (non-negotiable)
 
-1. **Deep modules**: small interface, hide complexity. Prefer pure functions in `src/domain/` tested through their public interface.
-2. **Seams**: Socket.IO and Express are **adapters**. Game rules and room transitions live outside them. Do not put combo validation only inside socket handlers.
+1. **Deep modules**: small interface, hide complexity. Prefer pure functions in `src/modules/<id>/domain/` tested through their public interface.
+2. **Seams**: Socket.IO and Express are **adapters**. Game rules and room transitions live outside them. Do not put combo validation only inside socket handlers. Portal hub (`src/sockets/`) owns shared auth; each multiplayer Module owns its event adapter under `src/modules/<id>/`.
 3. **One adapter ≠ port**: only introduce a port/interface when two adapters exist (e.g. real JWT verifier + test stub).
 4. **No formal FSM library.** Use `phase` enums (`idle | waiting | playing | settling`) and explicit handler guards.
 5. **MVP rules only (Classic core):** singles/pairs/triples/quads, straights (≥3, no 2s), 3/4 consecutive pairs (no 2s), same-shape beat, specials (tứ quý / 3 đôi thông vs single 2; 4 đôi thông vs single|pair 2 or tứ quý), **in-turn only**. **Opening lead:** holder of lowest dealt card id must include that card (4 players ⇒ always 3♠). Full finish ranking + simple points.
@@ -82,11 +85,11 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 - Errors to client: structured `{ code, message }` on `hand:error` / join rejects; do not leak stack traces.
 - SQLite access only via config/services — no ad-hoc DB in socket files.
 - UI: keep portal and game separated (EJS/Alpine vs Pixi canvas Module); shared knowledge is card id encoding and socket contract only. Tiến Lên client vendors Pixi/GSAP/Howler under `public/modules/tienlen/js/libs/` (no CDN); Socket.IO client still loads from server path (ADR 0008). Portal CSS is Tailwind v3.4 utilities + tokens in `tailwind.config.js` / `DESIGN.md` (ADR 0007); run `npm run build:css` after class changes.
-- New mini-app: add `public/modules/<id>/` + `icon.png` + one entry in `src/modules/catalog.js` (`status: 'live'` for playable; placeholders allowed for catalog mock only).
+- New mini-app: add `public/modules/<id>/` + `icon.png` + one entry in `src/modules/catalog.js` (`status: 'live'` for playable; placeholders allowed for catalog mock only). Multiplayer Module also gets `src/modules/<id>/{domain,rooms,sockets.js}` and is attached from `src/sockets/index.js`.
 
 ## Testing expectations
 
-- Domain rules (`combination`, `playRules`, `scoring`) and `roomTable` transitions must have unit tests.
+- Module domain rules (`combination`, `playRules`, `scoring`) and `roomTable` transitions must have unit tests under `tests/modules/<id>/`.
 - Do not require full browser E2E for MVP; document manual LAN checks instead.
 - When deepening a module, test through its interface; delete obsolete shallow tests if replaced.
 
@@ -94,6 +97,6 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 
 1. Read this file + `CONTEXT.md` (if present) + relevant `docs/adr/*`.
 2. Confirm the change is not an MVP non-goal.
-3. Put rules in `src/domain/` or `src/rooms/`; put transport in `src/sockets/` / controllers.
+3. Put Module rules in `src/modules/<id>/domain/` or `rooms/`; put Module transport in `src/modules/<id>/sockets.js`; keep portal JWT attach in `src/sockets/`.
 4. Run tests for touched pure modules.
 5. If you change stack, layout, or a locked decision, update this `AGENTS.md` and add/adjust an ADR when the decision is hard to reverse.

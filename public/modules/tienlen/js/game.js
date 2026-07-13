@@ -140,7 +140,7 @@
       text: '',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 30,
+        fontSize: 33,
         fill: 0xe7ecf3,
         fontWeight: '600',
       },
@@ -153,7 +153,7 @@
       text: '',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 22,
+        fontSize: 28,
         fill: 0x8b9bb4,
       },
     });
@@ -198,7 +198,7 @@
       text: 'Tiến Lên Miền Nam',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 36,
+        fontSize: 46,
         fill: 0xe7ecf3,
         fontWeight: '700',
       },
@@ -245,6 +245,20 @@
     error.y = 348;
     parent.addChild(error);
 
+    const turnTimer = new PIXI.Text({
+      text: '',
+      style: {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: 36,
+        fill: 0xe7ecf3,
+        fontWeight: '700',
+      },
+    });
+    turnTimer.anchor.set(0.5);
+    turnTimer.x = 960;
+    turnTimer.y = 250;
+    parent.addChild(turnTimer);
+
     function makeButton(label, x, y, primary) {
       const c = new PIXI.Container();
       c.x = x;
@@ -264,7 +278,7 @@
         text: label,
         style: {
           fontFamily: 'Segoe UI, system-ui, sans-serif',
-          fontSize: 24,
+          fontSize: 32,
           fill: 0xe7ecf3,
           fontWeight: '600',
         },
@@ -284,17 +298,21 @@
       return c;
     }
 
-    const btnStart = makeButton('Start (Host)', 1440, 24, true);
+    const btnStart = makeButton('Bắt đầu (Host)', 1440, 24, true);
     const btnLeave = makeButton('Rời phòng', 1648, 24, false);
     btnLeave._setEnabled(true);
     const btnPlay = makeButton('Đánh', 746, 996, true);
     const btnPass = makeButton('Bỏ lượt', 954, 996, false);
 
-    return { status, last, error, btnStart, btnLeave, btnPlay, btnPass };
+    return { status, last, error, turnTimer, btnStart, btnLeave, btnPlay, btnPass };
   }
 
   function showError(err) {
-    const msg = err?.message || err?.code || 'Error';
+    const msg =
+      (typeof err === 'string' ? err : null) ||
+      err?.message ||
+      err?.code ||
+      'Lỗi';
     ui.error.text = msg;
     setTimeout(() => {
       if (ui.error.text === msg) ui.error.text = '';
@@ -430,6 +448,27 @@
     }
   }
 
+  function formatTurnSeconds(msLeft) {
+    const sec = Math.max(0, Math.ceil(msLeft / 1000));
+    return sec;
+  }
+
+  function renderTurnTimer() {
+    const h = state.room?.hand;
+    const timer = ui.turnTimer;
+    if (!h || h.turnDeadline == null || !h.currentTurn) {
+      timer.text = '';
+      return;
+    }
+    const me = state.profile?.pccuid;
+    const seat = (state.room.seats || []).find((s) => s.pccuid === h.currentTurn);
+    const name = seat?.displayName || h.currentTurn;
+    const sec = formatTurnSeconds(h.turnDeadline - Date.now());
+    const mine = me && h.currentTurn === me;
+    timer.text = mine ? `Lượt của bạn · ${sec}s` : `${name} · ${sec}s`;
+    timer.style.fill = sec <= 5 ? 0xf07178 : mine ? 0x22c55e : 0xe7ecf3;
+  }
+
   async function syncTableFromRoom() {
     const h = state.room?.hand;
     if (!h?.lastCombo) {
@@ -460,14 +499,20 @@
       renderSeats();
       updateActionButtons();
       ui.last.text = '';
+      ui.turnTimer.text = '';
       return;
     }
     ui.status.text = `Phòng ${room.id} · ${room.phase} · ${room.seats.length}/4`;
     renderSeats();
     renderLast();
+    renderTurnTimer();
     syncTableFromRoom();
     updateActionButtons();
   }
+
+  app.ticker.add(() => {
+    if (state.room?.hand?.turnDeadline != null) renderTurnTimer();
+  });
 
   ui.btnStart.on('pointertap', () => {
     if (!ui.btnStart._enabled) return;
@@ -510,6 +555,7 @@
       }
       await renderHand(false);
       render();
+      requestHandSync();
     });
   });
 
@@ -520,7 +566,48 @@
     });
   });
 
+  let handSyncPending = false;
+
+  async function applyPrivateHand(cards, { dealAnim = false } = {}) {
+    const next = [...(cards || [])].map(Number).sort((a, b) => a - b);
+    const same =
+      next.length === state.hand.length && next.every((id, i) => id === state.hand[i]);
+    state.hand = next;
+    const keep = new Set(next);
+    for (const id of [...state.selected]) {
+      if (!keep.has(id)) state.selected.delete(id);
+    }
+    if (dealAnim) {
+      clearTableCards();
+      ui.status.text = 'Đã chia bài';
+      await renderHand(true);
+    } else if (!same || state.cardSprites.size !== next.length) {
+      await renderHand(false);
+    }
+  }
+
+  function requestHandSync() {
+    if (!state.socket?.connected || handSyncPending || state.animating) return;
+    const me = state.profile?.pccuid;
+    const count = state.room?.hand?.cardCounts?.[me];
+    if (count == null) return;
+    if (count === state.hand.length) return;
+    handSyncPending = true;
+    state.socket.emit('hand:sync', {}, async (res) => {
+      handSyncPending = false;
+      if (res?.ok && Array.isArray(res.cards)) {
+        await applyPrivateHand(res.cards, { dealAnim: false });
+        render();
+      }
+    });
+  }
+
   function connect() {
+    if (state.socket?.connected && state.socket.auth?.token === state.token) {
+      state.socket.emit('room:list');
+      requestHandSync();
+      return;
+    }
     if (state.socket) state.socket.disconnect();
     ui.status.text = 'Đang kết nối…';
     state.socket = io({ path: socketPath(), auth: { token: state.token } });
@@ -542,6 +629,7 @@
       if (mine) {
         state.room = mine;
         render();
+        requestHandSync();
       } else if (state.room) {
         state.room = null;
         state.hand = [];
@@ -557,6 +645,7 @@
       if (room.seats.some((s) => s.pccuid === state.profile.pccuid)) {
         state.room = room;
         render();
+        requestHandSync();
       } else if (state.room && state.room.id === room.id) {
         state.room = null;
         state.hand = [];
@@ -568,15 +657,19 @@
     });
 
     state.socket.on('hand:dealt', async ({ cards }) => {
-      state.hand = [...(cards || [])].sort((a, b) => a - b);
-      state.selected.clear();
-      clearTableCards();
-      ui.status.text = 'Đã chia bài';
-      await renderHand(true);
+      await applyPrivateHand(cards, { dealAnim: true });
       render();
     });
 
-    state.socket.on('hand:error', (err) => showError(err));
+    state.socket.on('hand:update', async ({ cards }) => {
+      await applyPrivateHand(cards, { dealAnim: false });
+      render();
+    });
+
+    state.socket.on('hand:error', (err) => {
+      showError(err);
+      if (err?.code === 'CARDS_NOT_HELD') requestHandSync();
+    });
 
     state.socket.on('hand:finished', (payload) => {
       const mine = payload.pointsDelta?.[state.profile?.pccuid];

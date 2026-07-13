@@ -22,7 +22,7 @@ Mở `http://localhost:3000`.
 | ------------- | ------------------ | -------------------------------------- |
 | `npm run dev` | `.env.development` | Local; thường `AUTH_DEV_BYPASS=1`      |
 | `npm start`   | `.env.production`  | Production                             |
-| `npm test`    | —                  | Unit tests domain + roomTable + config |
+| `npm test`    | —                  | Unit tests (tienlen domain/rooms + config) |
 
 ## Environment
 

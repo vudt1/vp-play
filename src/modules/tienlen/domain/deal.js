@@ -13,7 +13,7 @@ function shuffle(deck, random = Math.random) {
 
 function deal(playerCount, random = Math.random) {
   if (playerCount < 2 || playerCount > 4) {
-    throw new Error('playerCount must be 2–4');
+    throw new Error('Cần từ 2–4 người chơi');
   }
   const deck = shuffle(fullDeck(), random);
   const hands = [];

@@ -4,6 +4,7 @@ const { validatePlay } = require('../domain/playRules');
 const { deal } = require('../domain/deal');
 const { pointsForFinish } = require('../domain/scoring');
 
+
 const ROOM_IDS = [1, 2, 3];
 const MAX_SEATS = 4;
 
@@ -11,7 +12,7 @@ function createRoomTable(options = {}) {
   const turnTimeoutMs = options.turnTimeoutMs ?? 15_000;
   const reconnectMs = options.reconnectMs ?? 60_000;
   const random = options.random ?? Math.random;
-  const onSettle = options.onSettle ?? (async () => {});
+  const onSettle = options.onSettle ?? (async () => { });
 
   const rooms = new Map();
   for (const id of ROOM_IDS) {
@@ -40,16 +41,16 @@ function createRoomTable(options = {}) {
 
   function join(player, roomId) {
     const room = rooms.get(roomId);
-    if (!room) return err('ROOM_NOT_FOUND', 'Room not found');
+    if (!room) return err('ROOM_NOT_FOUND', 'Không tìm thấy phòng chơi');
     if (playerIndex.has(player.pccuid)) {
       const current = playerIndex.get(player.pccuid);
       if (current === roomId) return ok({ room: publicRoom(room) });
-      return err('ALREADY_IN_ROOM', 'Already seated in another room');
+      return err('ALREADY_IN_ROOM', 'Bạn đã ở trong phòng khác');
     }
     if (room.phase === 'playing' || room.phase === 'settling') {
-      return err('ROOM_BUSY', 'Hand in progress');
+      return err('ROOM_BUSY', 'Phòng đang có người chơi');
     }
-    if (room.seats.length >= MAX_SEATS) return err('ROOM_FULL', 'Room is full');
+    if (room.seats.length >= MAX_SEATS) return err('ROOM_FULL', 'Phòng đã đầy');
 
     room.seats.push({
       pccuid: player.pccuid,
@@ -66,7 +67,7 @@ function createRoomTable(options = {}) {
 
   function leave(pccuid) {
     const roomId = playerIndex.get(pccuid);
-    if (roomId == null) return err('NOT_IN_ROOM', 'Not in a room');
+    if (roomId == null) return err('NOT_IN_ROOM', 'Chưa chọn phòng chơi');
     const room = rooms.get(roomId);
 
     if (room.phase === 'playing' || room.phase === 'settling') {
@@ -84,7 +85,7 @@ function createRoomTable(options = {}) {
 
   function forceLeaveMidHand(room, pccuid) {
     const seat = room.seats.find((s) => s.pccuid === pccuid);
-    if (!seat) return err('NOT_IN_ROOM', 'Not in a room');
+    if (!seat) return err('NOT_IN_ROOM', 'Chưa vào phòng');
 
     seat.connected = false;
     seat.disconnectedUntil = 0;
@@ -118,14 +119,14 @@ function createRoomTable(options = {}) {
 
   function start(pccuid) {
     const roomId = playerIndex.get(pccuid);
-    if (roomId == null) return err('NOT_IN_ROOM', 'Not in a room');
+    if (roomId == null) return err('NOT_IN_ROOM', 'Bạn chưa chọn phòng để chơi');
     const room = rooms.get(roomId);
-    if (room.hostPccuid !== pccuid) return err('NOT_HOST', 'Only host can start');
+    if (room.hostPccuid !== pccuid) return err('NOT_HOST', 'Chỉ chủ phòng mới có thể bắt đầu');
     if (room.phase !== 'waiting' && room.phase !== 'idle') {
-      return err('BAD_PHASE', 'Cannot start now');
+      return err('BAD_PHASE', 'Không thể bắt đầu bây giờ');
     }
     if (room.seats.length < 2 || room.seats.length > 4) {
-      return err('BAD_COUNT', 'Need 2–4 players');
+      return err('BAD_COUNT', 'Cần 2–4 người chơi');
     }
 
     const { hands } = deal(room.seats.length, random);
@@ -172,12 +173,12 @@ function createRoomTable(options = {}) {
     const room = requirePlayerPlaying(pccuid);
     if (room.error) return room;
     const { hand } = room;
-    if (hand.currentTurn !== pccuid) return err('NOT_YOUR_TURN', 'Not your turn');
+    if (hand.currentTurn !== pccuid) return err('NOT_YOUR_TURN', 'Không phải lượt của bạn');
 
     const cards = Array.isArray(cardIds) ? cardIds.map(Number) : [];
     const held = hand.hands[pccuid];
     if (!cards.every((c) => held.includes(c)) || new Set(cards).size !== cards.length) {
-      return err('CARDS_NOT_HELD', 'You do not hold those cards');
+      return err('CARDS_NOT_HELD', 'Không giữ quân bài này');
     }
 
     const result = validatePlay(cards, {
@@ -213,8 +214,8 @@ function createRoomTable(options = {}) {
     const room = requirePlayerPlaying(pccuid);
     if (room.error) return room;
     const { hand } = room;
-    if (hand.currentTurn !== pccuid) return err('NOT_YOUR_TURN', 'Not your turn');
-    if (hand.freeLead) return err('CANNOT_PASS', 'Cannot pass on free lead');
+    if (hand.currentTurn !== pccuid) return err('NOT_YOUR_TURN', 'Không phải lượt của bạn');
+    if (hand.freeLead) return err('CANNOT_PASS', 'Không thể bỏ lượt khi mở bài');
 
     hand.ringPassed.add(pccuid);
     const need = hand.active.length - 1;
@@ -238,10 +239,10 @@ function createRoomTable(options = {}) {
 
   function disconnect(pccuid, now = Date.now()) {
     const roomId = playerIndex.get(pccuid);
-    if (roomId == null) return err('NOT_IN_ROOM', 'Not in a room');
+    if (roomId == null) return err('NOT_IN_ROOM', 'Chưa chọn phòng chơi');
     const room = rooms.get(roomId);
     const seat = room.seats.find((s) => s.pccuid === pccuid);
-    if (!seat) return err('NOT_IN_ROOM', 'Not in a room');
+    if (!seat) return err('NOT_IN_ROOM', 'Chưa vào phòng chơi');
     seat.connected = false;
     seat.socketId = null;
     seat.disconnectedUntil = now + reconnectMs;
@@ -250,10 +251,10 @@ function createRoomTable(options = {}) {
 
   function reconnect(player, now = Date.now()) {
     const roomId = playerIndex.get(player.pccuid);
-    if (roomId == null) return err('NOT_IN_ROOM', 'Not in a room');
+    if (roomId == null) return err('NOT_IN_ROOM', 'Chưa chọn phòng chơi');
     const room = rooms.get(roomId);
     const seat = room.seats.find((s) => s.pccuid === player.pccuid);
-    if (!seat) return err('NOT_IN_ROOM', 'Not in a room');
+    if (!seat) return err('NOT_IN_ROOM', 'Chưa chọn phòng chơi');
     if (!seat.connected && seat.disconnectedUntil != null && now > seat.disconnectedUntil) {
       return leave(player.pccuid);
     }
@@ -319,9 +320,9 @@ function createRoomTable(options = {}) {
 
   function requirePlayerPlaying(pccuid) {
     const roomId = playerIndex.get(pccuid);
-    if (roomId == null) return err('NOT_IN_ROOM', 'Not in a room');
+    if (roomId == null) return err('NOT_IN_ROOM', 'Chưa vào phòng chơi');
     const room = rooms.get(roomId);
-    if (room.phase !== 'playing' || !room.hand) return err('BAD_PHASE', 'No hand in progress');
+    if (room.phase !== 'playing' || !room.hand) return err('BAD_PHASE', 'Không có ván bài đang diễn ra');
     return room;
   }
 
@@ -365,7 +366,7 @@ function createRoomTable(options = {}) {
       finishOrder: [...hand.finishOrder],
       pointsDelta: deltas,
     };
-    Promise.resolve(onSettle(payload)).catch(() => {});
+    Promise.resolve(onSettle(payload)).catch(() => { });
     room.hand = null;
     room.phase = room.seats.length === 0 ? 'idle' : 'waiting';
     return ok({ room: publicRoom(room), finished: payload });
@@ -384,21 +385,21 @@ function createRoomTable(options = {}) {
       })),
       hand: hand
         ? {
-            currentTurn: hand.currentTurn,
-            freeLead: hand.freeLead,
-            openingCardId: hand.openingCardId,
-            mustIncludeOpening: hand.mustIncludeOpening,
-            lastCombo: hand.lastCombo
-              ? { type: hand.lastCombo.type, cards: hand.lastCombo.cards, topCard: hand.lastCombo.topCard, length: hand.lastCombo.length, pairCount: hand.lastCombo.pairCount }
-              : null,
-            ringPassed: [...hand.ringPassed],
-            finishOrder: [...hand.finishOrder],
-            cardCounts: Object.fromEntries(
-              Object.entries(hand.hands).map(([id, cards]) => [id, cards.length])
-            ),
-            turnDeadline: hand.turnDeadline,
-            active: [...hand.active],
-          }
+          currentTurn: hand.currentTurn,
+          freeLead: hand.freeLead,
+          openingCardId: hand.openingCardId,
+          mustIncludeOpening: hand.mustIncludeOpening,
+          lastCombo: hand.lastCombo
+            ? { type: hand.lastCombo.type, cards: hand.lastCombo.cards, topCard: hand.lastCombo.topCard, length: hand.lastCombo.length, pairCount: hand.lastCombo.pairCount }
+            : null,
+          ringPassed: [...hand.ringPassed],
+          finishOrder: [...hand.finishOrder],
+          cardCounts: Object.fromEntries(
+            Object.entries(hand.hands).map(([id, cards]) => [id, cards.length])
+          ),
+          turnDeadline: hand.turnDeadline,
+          active: [...hand.active],
+        }
         : null,
     };
   }
