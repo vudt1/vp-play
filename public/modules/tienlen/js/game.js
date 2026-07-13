@@ -131,35 +131,35 @@
     g.y = pos.y;
 
     const light = new PIXI.Graphics();
-    light.circle(0, 0, 10);
+    light.circle(0, 0, 16);
     light.fill(0x2a3548);
-    light.x = pos.align === 'left' ? -70 : pos.align === 'right' ? 70 : -90;
+    light.x = pos.align === 'left' ? -88 : pos.align === 'right' ? 88 : -110;
     light.y = 0;
 
     const name = new PIXI.Text({
       text: '',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 22,
+        fontSize: 30,
         fill: 0xe7ecf3,
         fontWeight: '600',
       },
     });
     name.anchor.set(pos.align === 'right' ? 1 : pos.align === 'left' ? 0 : 0.5, 0.5);
-    name.x = pos.align === 'left' ? -50 : pos.align === 'right' ? 50 : 0;
+    name.x = pos.align === 'left' ? -58 : pos.align === 'right' ? 58 : 0;
     name.y = 0;
 
     const meta = new PIXI.Text({
       text: '',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 16,
+        fontSize: 22,
         fill: 0x8b9bb4,
       },
     });
     meta.anchor.set(name.anchor.x, 0.5);
     meta.x = name.x;
-    meta.y = 28;
+    meta.y = 34;
 
     g.addChild(light);
     g.addChild(name);
@@ -177,7 +177,7 @@
     }
     view.light.clear();
     if (active) {
-      view.light.circle(0, 0, 11);
+      view.light.circle(0, 0, 18);
       view.light.fill(0x22c55e);
       view.blinkTween = gsap.to(view.light, {
         alpha: 0.25,
@@ -188,7 +188,7 @@
       });
     } else {
       view.light.alpha = 1;
-      view.light.circle(0, 0, 10);
+      view.light.circle(0, 0, 16);
       view.light.fill(0x2a3548);
     }
   }
@@ -198,32 +198,32 @@
       text: 'Tiến Lên Miền Nam',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 28,
+        fontSize: 36,
         fill: 0xe7ecf3,
         fontWeight: '700',
       },
     });
     title.x = 40;
-    title.y = 24;
+    title.y = 20;
     parent.addChild(title);
 
     const status = new PIXI.Text({
       text: 'Chờ xác thực từ portal…',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 18,
+        fontSize: 24,
         fill: 0x8b9bb4,
       },
     });
     status.x = 40;
-    status.y = 64;
+    status.y = 68;
     parent.addChild(status);
 
     const last = new PIXI.Text({
       text: '',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 20,
+        fontSize: 28,
         fill: 0xc5d0e0,
       },
     });
@@ -236,13 +236,13 @@
       text: '',
       style: {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 18,
+        fontSize: 24,
         fill: 0xf07178,
       },
     });
     error.anchor.set(0.5);
     error.x = 960;
-    error.y = 340;
+    error.y = 348;
     parent.addChild(error);
 
     function makeButton(label, x, y, primary) {
@@ -254,7 +254,7 @@
       const bg = new PIXI.Graphics();
       const draw = (enabled) => {
         bg.clear();
-        bg.roundRect(0, 0, 160, 48, 10);
+        bg.roundRect(0, 0, 188, 56, 12);
         bg.fill(enabled ? (primary ? 0x3d8bfd : 0x243044) : 0x1a2332);
         bg.stroke({ width: 1, color: 0x2a3548 });
         c.alpha = enabled ? 1 : 0.45;
@@ -264,14 +264,14 @@
         text: label,
         style: {
           fontFamily: 'Segoe UI, system-ui, sans-serif',
-          fontSize: 18,
+          fontSize: 24,
           fill: 0xe7ecf3,
           fontWeight: '600',
         },
       });
       t.anchor.set(0.5);
-      t.x = 80;
-      t.y = 24;
+      t.x = 94;
+      t.y = 28;
       c.addChild(bg);
       c.addChild(t);
       c._setEnabled = (en) => {
@@ -284,11 +284,11 @@
       return c;
     }
 
-    const btnStart = makeButton('Start (Host)', 1480, 30, true);
-    const btnLeave = makeButton('Rời phòng', 1660, 30, false);
+    const btnStart = makeButton('Start (Host)', 1440, 24, true);
+    const btnLeave = makeButton('Rời phòng', 1648, 24, false);
     btnLeave._setEnabled(true);
-    const btnPlay = makeButton('Đánh', 760, 1000, true);
-    const btnPass = makeButton('Bỏ lượt', 940, 1000, false);
+    const btnPlay = makeButton('Đánh', 746, 996, true);
+    const btnPass = makeButton('Bỏ lượt', 954, 996, false);
 
     return { status, last, error, btnStart, btnLeave, btnPlay, btnPass };
   }
