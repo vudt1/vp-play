@@ -23,6 +23,11 @@
     stopAll() {
       Object.values(this.sounds).forEach((s) => s.stop());
     },
+
+    setMuted(muted) {
+      if (typeof Howler !== 'undefined') Howler.mute(!!muted);
+      if (muted) this.stopAll();
+    },
   };
 
   global.SoundManager = SoundManager;

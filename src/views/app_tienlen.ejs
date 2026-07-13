@@ -47,10 +47,10 @@
     >Vào portal</button>
   </div>
 
-  <div x-show="profile" x-cloak class="flex flex-col gap-xl">
+  <div x-show="profile && !showGame" x-cloak class="flex flex-col gap-xl">
     <header class="flex flex-col gap-lg">
       <a
-        class="inline-flex items-center gap-sm text-on-surface-variant hover:text-primary font-body-md w-fit no-underline"
+        class="inline-flex items-center gap-sm text-on-surface-variant hover:text-primary font-body-md w-fit no-underline back-link"
         href="<%= publicPath('/') %>"
         @click="leaveSurface($event)"
       >
@@ -120,25 +120,7 @@
     </div>
     <% } %>
 
-    <div class="rounded-xl border border-border-muted bg-surface-container p-xl" x-show="showGame">
-      <div class="flex items-center justify-between gap-md mb-lg">
-        <h2 class="font-headline-md text-headline-md text-on-surface">Bàn chơi</h2>
-        <button
-          type="button"
-          class="border border-border-muted text-on-surface font-label-sm text-label-sm py-sm px-lg rounded-lg hover:border-primary"
-          @click="closeGame()"
-        >Đóng bàn</button>
-      </div>
-      <iframe
-        id="module-frame"
-        src="<%= publicPath(module.entryPath) %>?base=<%= encodeURIComponent(appPrefix || '') %>"
-        title="<%= module.name %>"
-        class="w-full min-h-[min(70vh,640px)] h-[640px] rounded-lg border border-border-muted bg-surface-container-lowest"
-        @load="postAuthToGame()"
-      ></iframe>
-    </div>
-
-    <div class="rounded-xl border border-border-muted bg-surface-container p-xl" x-show="!showGame && profile">
+    <div class="rounded-xl border border-border-muted bg-surface-container p-xl" x-show="profile">
       <button
         type="button"
         class="bg-primary text-on-primary font-label-sm text-label-sm py-sm px-xl rounded-lg disabled:opacity-40 active:scale-95"
@@ -148,6 +130,34 @@
         <%= module.kind === 'multiplayer' ? 'Mở bàn (cần vào phòng)' : 'Mở' %>
       </button>
     </div>
+  </div>
+
+  <div class="cinema-shell" x-show="showGame" x-cloak>
+    <div class="cinema-bar">
+      <a
+        class="inline-flex items-center gap-sm text-on-surface-variant hover:text-primary font-body-md no-underline back-link"
+        href="<%= publicPath('/') %>"
+        @click="leaveSurface($event)"
+      >
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        Ứng dụng
+      </a>
+      <span class="text-outline font-label-sm text-label-sm" x-show="seatedRoomId">
+        Phòng <span x-text="seatedRoomId"></span>
+      </span>
+      <button
+        type="button"
+        class="border border-border-muted text-on-surface font-label-sm text-label-sm py-sm px-lg rounded-lg hover:border-primary active:scale-95"
+        @click="closeGame()"
+      >Đóng bàn</button>
+    </div>
+    <iframe
+      id="module-frame"
+      src="<%= publicPath(module.entryPath) %>?base=<%= encodeURIComponent(appPrefix || '') %>"
+      title="<%= module.name %>"
+      class="cinema-frame"
+      @load="postAuthToGame()"
+    ></iframe>
   </div>
 </section>
 

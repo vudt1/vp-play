@@ -98,7 +98,7 @@
   const seatViews = {};
 
   const SEAT_LAYOUT = {
-    bottom: { x: 960, y: 980, align: 'center' },
+    bottom: { x: 320, y: 980, align: 'left' },
     top: { x: 960, y: 90, align: 'center' },
     left: { x: 160, y: 480, align: 'left' },
     right: { x: 1760, y: 480, align: 'right' },
@@ -407,7 +407,7 @@
       const offline = seat.connected === false ? ' (offline)' : '';
       view.name.text = `${seat.displayName}${host}${offline}`;
       const count = room.hand?.cardCounts?.[seat.pccuid];
-      view.meta.text = count != null ? `${count} lá` : seat.pccuid;
+      view.meta.text = count != null ? `${count} lá` : '';
       setLightActive(view, room.hand?.currentTurn === seat.pccuid);
     }
   }
@@ -599,13 +599,68 @@
     });
   }
 
+  function setGameVisible(visible) {
+    if (globalThis.SoundManager?.setMuted) {
+      SoundManager.setMuted(!visible);
+    } else if (typeof Howler !== 'undefined') {
+      Howler.mute(!visible);
+    }
+  }
+
+  function teardown() {
+    setGameVisible(false);
+    if (state.socket) {
+      try {
+        state.socket.disconnect();
+      } catch (_) {
+        /* ignore */
+      }
+      state.socket = null;
+    }
+    state.room = null;
+    state.hand = [];
+    state.selected.clear();
+    try {
+      clearHandSprites();
+      clearTableCards();
+    } catch (_) {
+      /* ignore */
+    }
+    Object.values(seatViews).forEach((v) => {
+      if (v.blinkTween) {
+        v.blinkTween.kill();
+        v.blinkTween = null;
+      }
+    });
+    try {
+      if (typeof gsap !== 'undefined') gsap.globalTimeline.clear();
+    } catch (_) {
+      /* ignore */
+    }
+    try {
+      app.destroy(true, { children: true, texture: false });
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
   window.parent.postMessage({ type: 'vp-game-ready' }, window.location.origin);
 
   window.addEventListener('message', (ev) => {
     if (ev.origin !== window.location.origin) return;
-    if (ev.data?.type !== 'vp-auth') return;
-    state.token = ev.data.token;
-    state.profile = ev.data.profile;
-    connect();
+    const type = ev.data?.type;
+    if (type === 'vp-auth') {
+      state.token = ev.data.token;
+      state.profile = ev.data.profile;
+      connect();
+      return;
+    }
+    if (type === 'vp-game-visibility') {
+      setGameVisible(ev.data.visible !== false);
+      return;
+    }
+    if (type === 'vp-game-teardown') {
+      teardown();
+    }
   });
 })();

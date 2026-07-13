@@ -117,6 +117,52 @@
 }
 
 @layer components {
+  body.cinema-active {
+    overflow: hidden;
+  }
+
+  body.cinema-active > header,
+  body.cinema-active > footer {
+    display: none !important;
+  }
+
+  body.cinema-active > main {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .cinema-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    background: theme('colors.surface-container-lowest');
+  }
+
+  .cinema-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: theme('spacing.md');
+    height: 48px;
+    padding: 0 theme('spacing.lg');
+    flex-shrink: 0;
+    border-bottom: 1px solid theme('colors.border-muted');
+    background: theme('colors.surface-container');
+  }
+
+  .cinema-frame {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    border: 0;
+    display: block;
+    background: #05070b;
+  }
+
   .material-symbols-outlined {
     font-family: 'Material Symbols Outlined';
     font-weight: normal;

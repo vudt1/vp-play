@@ -203,7 +203,9 @@ function portalApp() {
       const room = this.rooms.find((r) => r.seats.some((s) => s.pccuid === uid));
       this.seatedRoomId = room ? room.id : null;
       if (!this.seatedRoomId && this.showGame && moduleKind === 'multiplayer') {
+        this.setGameVisible(false);
         this.showGame = false;
+        this.syncCinemaClass();
       }
     },
 
@@ -239,20 +241,26 @@ function portalApp() {
     },
 
     leaveRoom() {
+      this.setGameVisible(false);
       this.leaveIfSeated({ wait: false });
       this.showGame = false;
+      this.syncCinemaClass();
       this.joinError = null;
     },
 
     leaveIfSeated(opts = {}) {
       const wait = opts.wait !== false;
       if (!this.socket || !this.seatedRoomId || this._leaving) {
+        this.showGame = false;
+        this.syncCinemaClass();
         return wait ? Promise.resolve() : undefined;
       }
       this._leaving = true;
       const roomId = this.seatedRoomId;
       this.seatedRoomId = null;
+      this.setGameVisible(false);
       this.showGame = false;
+      this.syncCinemaClass();
 
       const finish = () => {
         this._leaving = false;
@@ -291,6 +299,10 @@ function portalApp() {
     },
 
     async leaveSurface(ev) {
+      this.notifyGameTeardown();
+      this.setGameVisible(false);
+      this.showGame = false;
+      this.syncCinemaClass();
       if (ev) {
         ev.preventDefault();
         const href = ev.currentTarget?.getAttribute?.('href');
@@ -320,20 +332,52 @@ function portalApp() {
       }
       ev.preventDefault();
       ev.stopPropagation();
+      this.notifyGameTeardown();
       this.leaveIfSeated({ wait: true }).then(() => {
         window.location.href = url.href;
       });
     },
 
+    syncCinemaClass() {
+      document.body.classList.toggle('cinema-active', !!this.showGame);
+    },
+
+    postToGame(payload) {
+      const frame = document.getElementById('module-frame');
+      if (!frame?.contentWindow) return;
+      try {
+        frame.contentWindow.postMessage(payload, window.location.origin);
+      } catch (_) {
+        /* ignore */
+      }
+    },
+
+    setGameVisible(visible) {
+      this.postToGame({ type: 'vp-game-visibility', visible: !!visible });
+    },
+
+    notifyGameTeardown() {
+      this.postToGame({ type: 'vp-game-teardown' });
+    },
+
     openGame() {
       if (moduleKind === 'multiplayer' && !this.seatedRoomId) return;
       this.showGame = true;
-      this.$nextTick?.(() => this.postAuthToGame());
-      setTimeout(() => this.postAuthToGame(), 300);
+      this.syncCinemaClass();
+      this.$nextTick?.(() => {
+        this.postAuthToGame();
+        this.setGameVisible(true);
+      });
+      setTimeout(() => {
+        this.postAuthToGame();
+        this.setGameVisible(true);
+      }, 300);
     },
 
     closeGame() {
+      this.setGameVisible(false);
       this.showGame = false;
+      this.syncCinemaClass();
     },
 
     postAuthToGame() {
