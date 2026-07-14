@@ -147,8 +147,8 @@
   const SEAT_LAYOUT = {
     bottom: { x: 320, y: 980, align: 'left' },
     top: { x: 960, y: 90, align: 'center' },
-    left: { x: 160, y: 480, align: 'left' },
-    right: { x: 1760, y: 480, align: 'right' },
+    left: { x: 100, y: 480, align: 'left', vertical: true },
+    right: { x: 1820, y: 480, align: 'right', vertical: true },
   };
 
   const OPPONENT_STACK = {
@@ -162,7 +162,7 @@
       minStep: 12,
     },
     left: {
-      cx: 220,
+      cx: 240,
       cy: 480,
       axis: 'y',
       box: 420,
@@ -171,7 +171,7 @@
       minStep: 5,
     },
     right: {
-      cx: 1700,
+      cx: 1680,
       cy: 480,
       axis: 'y',
       box: 420,
@@ -180,6 +180,25 @@
       minStep: 5,
     },
   };
+
+  const SEAT_NAME_STYLE = {
+    fontFamily: 'Segoe UI, system-ui, sans-serif',
+    fontSize: 33,
+    fill: 0xe7ecf3,
+    fontWeight: '600',
+  };
+  const SEAT_TIMER_STYLE = {
+    fontFamily: 'Segoe UI, system-ui, sans-serif',
+    fontSize: 26,
+    fill: 0xe7ecf3,
+    fontWeight: '700',
+  };
+  const SEAT_TIMER_GAP = 20;
+  const SIDE_NAME_MAX_PX = 320;
+  const SIDE_CLUSTER_GAP = 16;
+  const SIDE_LIGHT_R = 18;
+
+  const seatNameMeasure = new PIXI.Text({ text: '', style: SEAT_NAME_STYLE });
 
   function seatSlotsForCount(n) {
     if (n <= 2) return ['bottom', 'top'];
@@ -200,56 +219,98 @@
     return map;
   }
 
-  const SEAT_TIMER_GAP = 20;
+  function formatSeatLabel(displayName, { isHost = false, offline = false } = {}) {
+    const suffix = `${isHost ? ' · Host' : ''}${offline ? ' (offline)' : ''}`;
+    const raw = displayName || '';
+    seatNameMeasure.text = `${raw}${suffix}`;
+    if (seatNameMeasure.width <= SIDE_NAME_MAX_PX) return `${raw}${suffix}`;
+
+    let lo = 0;
+    let hi = raw.length;
+    let best = suffix ? `…${suffix}` : '…';
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const head = mid >= raw.length ? raw : `${raw.slice(0, mid)}…`;
+      seatNameMeasure.text = `${head}${suffix}`;
+      if (seatNameMeasure.width <= SIDE_NAME_MAX_PX) {
+        best = `${head}${suffix}`;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    seatNameMeasure.text = best;
+    if (seatNameMeasure.width <= SIDE_NAME_MAX_PX) return best;
+    seatNameMeasure.text = `…${suffix}`;
+    if (seatNameMeasure.width <= SIDE_NAME_MAX_PX) return `…${suffix}`;
+    return suffix || '…';
+  }
 
   function ensureSeatView(key) {
     if (seatViews[key]) return seatViews[key];
     const pos = SEAT_LAYOUT[key];
+    const vertical = !!pos.vertical;
     const g = new PIXI.Container();
     g.x = pos.x;
     g.y = pos.y;
 
     const glow = new PIXI.Graphics();
-    glow.x = pos.align === 'left' ? -88 : pos.align === 'right' ? 88 : -110;
-    glow.y = 0;
-
     const light = new PIXI.Graphics();
     light.circle(0, 0, 16);
     light.fill(0x2a3548);
-    light.x = glow.x;
-    light.y = 0;
 
-    const name = new PIXI.Text({
-      text: '',
-      style: {
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 33,
-        fill: 0xe7ecf3,
-        fontWeight: '600',
-      },
-    });
-    name.anchor.set(pos.align === 'right' ? 1 : pos.align === 'left' ? 0 : 0.5, 0.5);
-    name.x = pos.align === 'left' ? -58 : pos.align === 'right' ? 58 : 0;
-    name.y = 0;
-
-    const timer = new PIXI.Text({
-      text: '',
-      style: {
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 26,
-        fill: 0xe7ecf3,
-        fontWeight: '700',
-      },
-    });
+    const name = new PIXI.Text({ text: '', style: SEAT_NAME_STYLE });
+    const timer = new PIXI.Text({ text: '', style: SEAT_TIMER_STYLE });
     timer.anchor.set(0.5);
 
-    g.addChild(glow);
-    g.addChild(light);
-    g.addChild(name);
-    g.addChild(timer);
+    let cluster = null;
+    if (vertical) {
+      cluster = new PIXI.Container();
+      glow.x = 0;
+      glow.y = 0;
+      light.x = 0;
+      light.y = 0;
+      name.anchor.set(0, 0.5);
+      name.x = SIDE_LIGHT_R + SIDE_CLUSTER_GAP;
+      name.y = 0;
+      timer.anchor.set(0, 0.5);
+      timer.x = name.x;
+      timer.y = 0;
+      cluster.addChild(glow);
+      cluster.addChild(light);
+      cluster.addChild(name);
+      cluster.addChild(timer);
+      cluster.rotation = key === 'left' ? -Math.PI / 2 : Math.PI / 2;
+      g.addChild(cluster);
+    } else {
+      glow.x = pos.align === 'left' ? -88 : pos.align === 'right' ? 88 : -110;
+      glow.y = 0;
+      light.x = glow.x;
+      light.y = 0;
+      name.anchor.set(pos.align === 'right' ? 1 : pos.align === 'left' ? 0 : 0.5, 0.5);
+      name.x = pos.align === 'left' ? -58 : pos.align === 'right' ? 58 : 0;
+      name.y = 0;
+      g.addChild(glow);
+      g.addChild(light);
+      g.addChild(name);
+      g.addChild(timer);
+    }
+
     layers.seats.addChild(g);
 
-    seatViews[key] = { g, light, glow, name, timer, slot: key, blinkTween: null, glowTween: null, glowAlphaTween: null };
+    seatViews[key] = {
+      g,
+      cluster,
+      light,
+      glow,
+      name,
+      timer,
+      slot: key,
+      nameMode: vertical ? 'vertical' : 'horizontal',
+      blinkTween: null,
+      glowTween: null,
+      glowAlphaTween: null,
+    };
     layoutSeatTimer(seatViews[key]);
     return seatViews[key];
   }
@@ -258,6 +319,18 @@
     const timer = view.timer;
     const name = view.name;
     if (!timer || !name) return;
+
+    if (view.nameMode === 'vertical') {
+      const gap = SIDE_CLUSTER_GAP;
+      name.anchor.set(0, 0.5);
+      name.x = SIDE_LIGHT_R + gap;
+      name.y = 0;
+      timer.anchor.set(0, 0.5);
+      timer.x = name.x + name.width + gap;
+      timer.y = 0;
+      return;
+    }
+
     const gap = SEAT_TIMER_GAP;
     const slot = view.slot;
     if (slot === 'top') {
@@ -678,9 +751,13 @@
       if (!slot) continue;
       const view = ensureSeatView(slot);
       view.g.visible = true;
-      const host = room.hostPccuid === seat.pccuid ? ' · Host' : '';
-      const offline = seat.connected === false ? ' (offline)' : '';
-      view.name.text = `${seat.displayName}${host}${offline}`;
+      const isHost = room.hostPccuid === seat.pccuid;
+      const offline = seat.connected === false;
+      if (view.nameMode === 'vertical') {
+        view.name.text = formatSeatLabel(seat.displayName, { isHost, offline });
+      } else {
+        view.name.text = `${seat.displayName || ''}${isHost ? ' · Host' : ''}${offline ? ' (offline)' : ''}`;
+      }
       layoutSeatTimer(view);
       setLightActive(view, room.hand?.currentTurn === seat.pccuid);
     }
