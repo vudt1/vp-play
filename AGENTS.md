@@ -70,7 +70,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 7. **Auth path:** Portal owns Keycloak. With `AUTH_DEV_BYPASS=0`, all portal pages (`/`, `/apps/:id`, `/ranking`) use `login-required` and must succeed `POST /api/auth/sync` before useful UI; access token may be cached in `localStorage` (`vp_access_token`). Display name in header `#auth-slot`. Game iframe receives `{ type: 'vp-auth', token, profile }` via **postMessage** (same origin). Socket uses token; server verifies JWKS. **Do not** init Keycloak inside the iframe.
 8. **Portal IA:** home `/` = Module catalog only; multiplayer Room lobby + iframe live on app surface `/apps/:id`. Leaving the app surface (Back / navigate away) must emit `room:leave` when seated. Ranking `/ranking` = global top 10 by raw `totalPoints` (all Modules share one sum via `applyPoints`).
 9. **Rooms:** exactly 3 fixed slots (Tiến Lên); Host = first joiner, migrates on leave; host starts at 2–4 players; after hand → waiting + host restarts.
-10. **Disconnect:** hold seat ~`RECONNECT_MS` (default 60s); turn timeout → auto-pass (not AI card choice).
+10. **Disconnect / turn timeout:** hold seat ~`RECONNECT_MS` (default 60s). Turn timeout never auto-plays cards: non–free-lead → auto-pass (`ringPassed`); free-lead → free-lead skip (next active keeps free lead; opening must-include only for original opener). Mid-hand leave with seats &lt; 2 → Hand abort (draw, no points), emit `hand:aborted`, phase waiting/idle.
 11. **Card ids:** `id = rank * 4 + suit`, rank 0=3 … 12=2, suit 0=♠ 1=♣ 2=♦ 3=♥; **3♠ = 0** (see `spec/logic_game.md`).
 12. **Module icons:** `public/modules/<id>/icon.png` (or `.svg`); catalog reads path from manifest.
 13. **Secrets:** never commit `.env`, `.env.development`, `.env.production`, tokens, or Keycloak secrets. Use `*.example` only for names.
@@ -84,7 +84,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 - Socket event names: `room:*` and `hand:*`; keep payloads small.
 - Errors to client: structured `{ code, message }` on `hand:error` / join rejects; do not leak stack traces.
 - SQLite access only via config/services — no ad-hoc DB in socket files.
-- UI: keep portal and game separated (EJS/Alpine vs Pixi canvas Module); shared knowledge is card id encoding and socket contract only. Tiến Lên client vendors Pixi/GSAP/Howler under `public/modules/tienlen/js/libs/` (no CDN); Socket.IO client still loads from server path (ADR 0008). Portal CSS is Tailwind v3.4 utilities + tokens in `tailwind.config.js` / `DESIGN.md` (ADR 0007); run `npm run build:css` after class changes.
+- UI: keep portal and game separated (EJS/Alpine vs Pixi canvas Module); shared knowledge is card id encoding and socket contract only. Tiến Lên client: full-window Pixi canvas + virtual 1920×1080 stage container (uniform scale, center letterbox, black bars — ADR 0010); vendors Pixi/GSAP/Howler under `public/modules/tienlen/js/libs/` (no CDN); Socket.IO client still loads from server path (ADR 0008). Opponent card counts = card-back stacks (not “N lá” text). Portal CSS is Tailwind v3.4 utilities + tokens in `tailwind.config.js` / `DESIGN.md` (ADR 0007); run `npm run build:css` after class changes.
 - New mini-app: add `public/modules/<id>/` + `icon.png` + one entry in `src/modules/catalog.js` (`status: 'live'` for playable; placeholders allowed for catalog mock only). Multiplayer Module also gets `src/modules/<id>/{domain,rooms,sockets.js}` and is attached from `src/sockets/index.js`.
 
 ## Testing expectations

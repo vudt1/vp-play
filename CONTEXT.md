@@ -29,19 +29,27 @@ Một ván chia bài đến khi xếp hạng xong.
 _Avoid_: Game, match, round (ambiguous)
 
 **Ring**:
-Chuỗi lượt đánh cho đến khi N−1 người bỏ lượt; người không bỏ giành quyền mở tự do.
+Chuỗi lượt đánh cho đến khi N−1 người bỏ lượt; người không bỏ giành quyền mở tự do. Ai đã pass trong Ring mất quyền đánh cho đến khi Ring kết thúc.
 _Avoid_: Trick (Western card sense), round
+
+**Free-lead skip**:
+Hết giờ trên free lead: không đánh bài, free lead chuyển sang người kế trong active; không ghi pass vào Ring. Opening must-include chỉ còn bắt opener gốc.
+_Avoid_: Auto-lead, auto-play on timeout
+
+**Hand abort**:
+Hủy Hand giữa chừng khi còn dưới hai ghế (rời phòng / mất kết nối hết hạn); hòa, không ghi điểm; phòng về waiting hoặc idle.
+_Avoid_: Draw match (as code id), forfeit, cancel game
 
 **Combo**:
 Tổ hợp bài hợp lệ: rác, đôi, sám, tứ quý, sảnh (≥3, không 2), ba/bốn đôi thông (không 2).
 _Avoid_: Hand, set, meld
 
 **Opening lead**:
-Lượt free lead đầu tiên của một Hand. Opener là người cầm **opening card** (card id nhỏ nhất trong các tay đã chia); Combo mở bắt buộc gồm lá đó. Với đủ 4 người (hết 52 lá) opening card luôn là 3♠.
+Lượt free lead đầu tiên của một Hand. Opener là người cầm **opening card** (card id nhỏ nhất trong các tay đã chia); Combo mở bắt buộc gồm lá đó chỉ khi vẫn là lượt của opener. Với đủ 4 người (hết 52 lá) opening card luôn là 3♠.
 _Avoid_: First turn only, 3♠ rule (as the sole name)
 
 **Opening card**:
-Lá có card id nhỏ nhất trong mọi tay đã deal của Hand; public state có thể expose `openingCardId` và `mustIncludeOpening` cho đến khi lượt mở thành công.
+Lá có card id nhỏ nhất trong mọi tay đã deal của Hand; public state có thể expose `openingCardId` và `mustIncludeOpening` cho đến khi opener mở thành công hoặc free-lead skip khỏi opener.
 _Avoid_: 3 of spades (as the only name), seed card
 
 **Beat**:

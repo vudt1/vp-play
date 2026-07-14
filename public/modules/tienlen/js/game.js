@@ -28,14 +28,16 @@
     selected: new Set(),
     cardSprites: new Map(),
     tableCards: [],
+    opponentStacks: {},
     animating: false,
+    destroyed: false,
   };
 
   const app = new PIXI.Application();
   await app.init({
-    width: BASE_W,
-    height: BASE_H,
-    backgroundColor: 0x05070b,
+    width: window.innerWidth || BASE_W,
+    height: window.innerHeight || BASE_H,
+    backgroundColor: 0x000000,
     antialias: true,
     resolution: Math.min(window.devicePixelRatio || 1, 2),
     autoDensity: true,
@@ -44,20 +46,62 @@
   const root = document.getElementById('game-root');
   root.appendChild(app.canvas);
 
-  function applyLetterbox() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const scale = Math.min(vw / BASE_W, vh / BASE_H);
-    const w = Math.floor(BASE_W * scale);
-    const h = Math.floor(BASE_H * scale);
-    app.canvas.style.width = `${w}px`;
-    app.canvas.style.height = `${h}px`;
-  }
-  window.addEventListener('resize', applyLetterbox);
-  applyLetterbox();
+  const stageRoot = new PIXI.Container();
+  app.stage.addChild(stageRoot);
 
   const world = new PIXI.Container();
-  app.stage.addChild(world);
+  stageRoot.addChild(world);
+
+  let letterboxRaf = 0;
+  let lastLetterbox = { vw: 0, vh: 0 };
+
+  function applyLetterbox() {
+    if (state.destroyed) return;
+    const vw = Math.max(1, window.innerWidth || BASE_W);
+    const vh = Math.max(1, window.innerHeight || BASE_H);
+    if (vw === lastLetterbox.vw && vh === lastLetterbox.vh) return;
+    lastLetterbox = { vw, vh };
+    app.renderer.resize(vw, vh);
+    const scale = Math.min(vw / BASE_W, vh / BASE_H);
+    stageRoot.scale.set(scale);
+    stageRoot.x = (vw - BASE_W * scale) / 2;
+    stageRoot.y = (vh - BASE_H * scale) / 2;
+  }
+
+  function onWindowResize() {
+    if (letterboxRaf) return;
+    letterboxRaf = requestAnimationFrame(() => {
+      letterboxRaf = 0;
+      applyLetterbox();
+    });
+  }
+
+  function onVisibilityChange() {
+    setGameVisible(document.visibilityState === 'visible');
+  }
+
+  function onParentMessage(ev) {
+    if (ev.origin !== window.location.origin) return;
+    const type = ev.data?.type;
+    if (type === 'vp-auth') {
+      state.token = ev.data.token;
+      state.profile = ev.data.profile;
+      connect();
+      return;
+    }
+    if (type === 'vp-game-visibility') {
+      setGameVisible(ev.data.visible !== false);
+      return;
+    }
+    if (type === 'vp-game-teardown') {
+      teardown();
+    }
+  }
+
+  window.addEventListener('resize', onWindowResize);
+  window.addEventListener('message', onParentMessage);
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  applyLetterbox();
 
   await PIXI.Assets.load([
     { alias: 'table', src: `${moduleRoot}/assets/images/table.jpg` },
@@ -82,11 +126,13 @@
 
   const layers = {
     seats: new PIXI.Container(),
+    opponents: new PIXI.Container(),
     play: new PIXI.Container(),
     hand: new PIXI.Container(),
     ui: new PIXI.Container(),
   };
   world.addChild(layers.seats);
+  world.addChild(layers.opponents);
   world.addChild(layers.play);
   world.addChild(layers.hand);
   world.addChild(layers.ui);
@@ -102,6 +148,36 @@
     top: { x: 960, y: 90, align: 'center' },
     left: { x: 160, y: 480, align: 'left' },
     right: { x: 1760, y: 480, align: 'right' },
+  };
+
+  const OPPONENT_STACK = {
+    top: {
+      cx: 960,
+      cy: 210,
+      axis: 'x',
+      box: 900,
+      scale: 0.78,
+      maxStep: 46,
+      minStep: 12,
+    },
+    left: {
+      cx: 220,
+      cy: 480,
+      axis: 'y',
+      box: 420,
+      scale: 0.42,
+      maxStep: 22,
+      minStep: 5,
+    },
+    right: {
+      cx: 1700,
+      cy: 480,
+      axis: 'y',
+      box: 420,
+      scale: 0.42,
+      maxStep: 22,
+      minStep: 5,
+    },
   };
 
   function seatSlotsForCount(n) {
@@ -149,24 +225,11 @@
     name.x = pos.align === 'left' ? -58 : pos.align === 'right' ? 58 : 0;
     name.y = 0;
 
-    const meta = new PIXI.Text({
-      text: '',
-      style: {
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 28,
-        fill: 0x8b9bb4,
-      },
-    });
-    meta.anchor.set(name.anchor.x, 0.5);
-    meta.x = name.x;
-    meta.y = 34;
-
     g.addChild(light);
     g.addChild(name);
-    g.addChild(meta);
     layers.seats.addChild(g);
 
-    seatViews[key] = { g, light, name, meta, blinkTween: null };
+    seatViews[key] = { g, light, name, blinkTween: null };
     return seatViews[key];
   }
 
@@ -190,6 +253,72 @@
       view.light.alpha = 1;
       view.light.circle(0, 0, 16);
       view.light.fill(0x2a3548);
+    }
+  }
+
+  function stackStep(count, cfg) {
+    if (count <= 1) return 0;
+    const step = cfg.box / (count - 1);
+    return Math.max(cfg.minStep, Math.min(cfg.maxStep, step));
+  }
+
+  function clearOpponentStacks() {
+    for (const key of Object.keys(state.opponentStacks)) {
+      const entry = state.opponentStacks[key];
+      if (entry?.container) entry.container.destroy({ children: true });
+    }
+    state.opponentStacks = {};
+    layers.opponents.removeChildren();
+  }
+
+  function renderOpponentStacks(map, cardCounts, me) {
+    const keep = new Set();
+    for (const [pccuid, slot] of Object.entries(map)) {
+      if (pccuid === me || slot === 'bottom') continue;
+      const cfg = OPPONENT_STACK[slot];
+      if (!cfg) continue;
+      const count = cardCounts?.[pccuid] ?? 0;
+      keep.add(slot);
+      let entry = state.opponentStacks[slot];
+      if (!entry) {
+        const container = new PIXI.Container();
+        layers.opponents.addChild(container);
+        entry = { container, sprites: [], count: -1 };
+        state.opponentStacks[slot] = entry;
+      }
+      if (entry.count === count && entry.sprites.length === count) continue;
+      entry.container.removeChildren();
+      for (const s of entry.sprites) s.destroy();
+      entry.sprites = [];
+      entry.count = count;
+      if (count <= 0) continue;
+      const step = stackStep(count, cfg);
+      const span = step * (count - 1);
+      const scale = cfg.scale;
+      const w = Card.WIDTH * scale;
+      const h = Card.HEIGHT * scale;
+      for (let i = 0; i < count; i += 1) {
+        const spr = new PIXI.Sprite(backTex);
+        spr.anchor.set(0.5);
+        spr.width = w;
+        spr.height = h;
+        if (cfg.axis === 'x') {
+          spr.x = cfg.cx - span / 2 + i * step;
+          spr.y = cfg.cy;
+        } else {
+          spr.x = cfg.cx;
+          spr.y = cfg.cy - span / 2 + i * step;
+        }
+        entry.container.addChild(spr);
+        entry.sprites.push(spr);
+      }
+    }
+    for (const slot of Object.keys(state.opponentStacks)) {
+      if (!keep.has(slot)) {
+        const entry = state.opponentStacks[slot];
+        entry.container.destroy({ children: true });
+        delete state.opponentStacks[slot];
+      }
     }
   }
 
@@ -259,35 +388,41 @@
     turnTimer.y = 250;
     parent.addChild(turnTimer);
 
-    function makeButton(label, x, y, primary) {
+    function makeButton(label, x, y, primary, opts = {}) {
+      const padX = opts.padX ?? 28;
+      const height = opts.height ?? 56;
+      const minWidth = opts.minWidth ?? 148;
+      const fontSize = opts.fontSize ?? 28;
       const c = new PIXI.Container();
       c.x = x;
       c.y = y;
       c.eventMode = 'static';
       c.cursor = 'pointer';
       const bg = new PIXI.Graphics();
-      const draw = (enabled) => {
-        bg.clear();
-        bg.roundRect(0, 0, 188, 56, 12);
-        bg.fill(enabled ? (primary ? 0x3d8bfd : 0x243044) : 0x1a2332);
-        bg.stroke({ width: 1, color: 0x2a3548 });
-        c.alpha = enabled ? 1 : 0.45;
-      };
-      draw(false);
       const t = new PIXI.Text({
         text: label,
         style: {
           fontFamily: 'Segoe UI, system-ui, sans-serif',
-          fontSize: 32,
+          fontSize,
           fill: 0xe7ecf3,
           fontWeight: '600',
         },
       });
       t.anchor.set(0.5);
-      t.x = 94;
-      t.y = 28;
+      const width = Math.max(minWidth, Math.ceil(t.width) + padX * 2);
+      t.x = width / 2;
+      t.y = height / 2;
+      const draw = (enabled) => {
+        bg.clear();
+        bg.roundRect(0, 0, width, height, 12);
+        bg.fill(enabled ? (primary ? 0x3d8bfd : 0x243044) : 0x1a2332);
+        bg.stroke({ width: 1, color: 0x2a3548 });
+        c.alpha = enabled ? 1 : 0.45;
+      };
+      draw(false);
       c.addChild(bg);
       c.addChild(t);
+      c._width = width;
       c._setEnabled = (en) => {
         c._enabled = en;
         draw(en);
@@ -298,11 +433,15 @@
       return c;
     }
 
-    const btnStart = makeButton('Bắt đầu (Host)', 1440, 24, true);
-    const btnLeave = makeButton('Rời phòng', 1648, 24, false);
+    const btnLeave = makeButton('Rời phòng', 0, 24, false);
+    const btnStart = makeButton('Bắt đầu (Host)', 0, 24, true);
+    const gap = 16;
+    const rightEdge = 1880;
+    btnLeave.x = rightEdge - btnLeave._width;
+    btnStart.x = btnLeave.x - gap - btnStart._width;
     btnLeave._setEnabled(true);
-    const btnPlay = makeButton('Đánh', 746, 996, true);
-    const btnPass = makeButton('Bỏ lượt', 954, 996, false);
+    const btnPlay = makeButton('Đánh', 746, 996, true, { minWidth: 188 });
+    const btnPass = makeButton('Bỏ lượt', 954, 996, false, { minWidth: 188 });
 
     return { status, last, error, turnTimer, btnStart, btnLeave, btnPlay, btnPass };
   }
@@ -328,6 +467,45 @@
   function clearTableCards() {
     for (const card of state.tableCards) card.destroy();
     state.tableCards = [];
+  }
+
+  function killSeatBlinks() {
+    Object.values(seatViews).forEach((v) => {
+      if (v.blinkTween) {
+        v.blinkTween.kill();
+        v.blinkTween = null;
+      }
+      setLightActive(v, false);
+    });
+  }
+
+  function resetPlaySurface({ keepRoom = true, statusText, clearRoomHand = false } = {}) {
+    state.hand = [];
+    state.selected.clear();
+    state.animating = false;
+    clearHandSprites();
+    clearTableCards();
+    clearOpponentStacks();
+    killSeatBlinks();
+    ui.last.text = '';
+    ui.turnTimer.text = '';
+    ui.error.text = '';
+    try {
+      if (typeof gsap !== 'undefined') gsap.globalTimeline.clear();
+    } catch (_) {
+      /* ignore */
+    }
+    if (!keepRoom) {
+      state.room = null;
+    } else if (clearRoomHand && state.room) {
+      state.room = {
+        ...state.room,
+        hand: null,
+        phase: state.room.seats?.length ? 'waiting' : 'idle',
+      };
+    }
+    render();
+    if (statusText != null) ui.status.text = statusText;
   }
 
   function handLayout(count) {
@@ -414,8 +592,12 @@
       v.g.visible = false;
     });
     const room = state.room;
-    if (!room || !state.profile) return;
-    const map = relativeSeatMap(room, state.profile.pccuid);
+    if (!room || !state.profile) {
+      clearOpponentStacks();
+      return;
+    }
+    const me = state.profile.pccuid;
+    const map = relativeSeatMap(room, me);
     for (const seat of room.seats) {
       const slot = map[seat.pccuid];
       if (!slot) continue;
@@ -424,9 +606,12 @@
       const host = room.hostPccuid === seat.pccuid ? ' · Host' : '';
       const offline = seat.connected === false ? ' (offline)' : '';
       view.name.text = `${seat.displayName}${host}${offline}`;
-      const count = room.hand?.cardCounts?.[seat.pccuid];
-      view.meta.text = count != null ? `${count} lá` : '';
       setLightActive(view, room.hand?.currentTurn === seat.pccuid);
+    }
+    if (room.hand?.cardCounts) {
+      renderOpponentStacks(map, room.hand.cardCounts, me);
+    } else {
+      clearOpponentStacks();
     }
   }
 
@@ -523,13 +708,7 @@
 
   ui.btnLeave.on('pointertap', () => {
     state.socket?.emit('room:leave', {}, () => {
-      state.room = null;
-      state.hand = [];
-      state.selected.clear();
-      clearHandSprites();
-      clearTableCards();
-      render();
-      ui.status.text = 'Đã rời phòng';
+      resetPlaySurface({ keepRoom: false, statusText: 'Đã rời phòng' });
     });
   });
 
@@ -579,6 +758,7 @@
     }
     if (dealAnim) {
       clearTableCards();
+      clearOpponentStacks();
       ui.status.text = 'Đã chia bài';
       await renderHand(true);
     } else if (!same || state.cardSprites.size !== next.length) {
@@ -631,12 +811,7 @@
         render();
         requestHandSync();
       } else if (state.room) {
-        state.room = null;
-        state.hand = [];
-        state.selected.clear();
-        clearHandSprites();
-        clearTableCards();
-        render();
+        resetPlaySurface({ keepRoom: false, statusText: 'Chưa vào phòng. Chọn phòng trên portal.' });
       }
     });
 
@@ -644,15 +819,17 @@
       if (!state.profile) return;
       if (room.seats.some((s) => s.pccuid === state.profile.pccuid)) {
         state.room = room;
+        if (!room.hand) {
+          resetPlaySurface({
+            keepRoom: true,
+            statusText: `Phòng ${room.id} · ${room.phase} · ${room.seats.length}/4`,
+          });
+          return;
+        }
         render();
         requestHandSync();
       } else if (state.room && state.room.id === room.id) {
-        state.room = null;
-        state.hand = [];
-        state.selected.clear();
-        clearHandSprites();
-        clearTableCards();
-        render();
+        resetPlaySurface({ keepRoom: false, statusText: 'Chưa vào phòng. Chọn phòng trên portal.' });
       }
     });
 
@@ -671,24 +848,32 @@
       if (err?.code === 'CARDS_NOT_HELD') requestHandSync();
     });
 
+    state.socket.on('hand:aborted', () => {
+      resetPlaySurface({
+        keepRoom: true,
+        clearRoomHand: true,
+        statusText: 'Ván hòa — không đủ người chơi',
+      });
+    });
+
     state.socket.on('hand:finished', (payload) => {
       const mine = payload.pointsDelta?.[state.profile?.pccuid];
-      ui.status.text =
+      const statusText =
         'Ván xong. Điểm: ' +
         (mine >= 0 ? '+' : '') +
         (mine ?? 0) +
         ' · ' +
         (payload.finishOrder || []).join(' → ');
+      resetPlaySurface({
+        keepRoom: true,
+        clearRoomHand: true,
+        statusText,
+      });
       if (mine != null && mine > 0) {
         Animations.celebrateWin(layers.ui, 960, 400);
       } else if (mine != null && mine < 0) {
         Animations.showBanner(layers.ui, 'Thua ván', 0xff4444);
       }
-      state.hand = [];
-      state.selected.clear();
-      clearHandSprites();
-      clearTableCards();
-      render();
     });
   }
 
@@ -701,7 +886,16 @@
   }
 
   function teardown() {
+    if (state.destroyed) return;
+    state.destroyed = true;
     setGameVisible(false);
+    window.removeEventListener('resize', onWindowResize);
+    window.removeEventListener('message', onParentMessage);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    if (letterboxRaf) {
+      cancelAnimationFrame(letterboxRaf);
+      letterboxRaf = 0;
+    }
     if (state.socket) {
       try {
         state.socket.disconnect();
@@ -716,15 +910,11 @@
     try {
       clearHandSprites();
       clearTableCards();
+      clearOpponentStacks();
     } catch (_) {
       /* ignore */
     }
-    Object.values(seatViews).forEach((v) => {
-      if (v.blinkTween) {
-        v.blinkTween.kill();
-        v.blinkTween = null;
-      }
-    });
+    killSeatBlinks();
     try {
       if (typeof gsap !== 'undefined') gsap.globalTimeline.clear();
     } catch (_) {
@@ -738,22 +928,4 @@
   }
 
   window.parent.postMessage({ type: 'vp-game-ready' }, window.location.origin);
-
-  window.addEventListener('message', (ev) => {
-    if (ev.origin !== window.location.origin) return;
-    const type = ev.data?.type;
-    if (type === 'vp-auth') {
-      state.token = ev.data.token;
-      state.profile = ev.data.profile;
-      connect();
-      return;
-    }
-    if (type === 'vp-game-visibility') {
-      setGameVisible(ev.data.visible !== false);
-      return;
-    }
-    if (type === 'vp-game-teardown') {
-      teardown();
-    }
-  });
 })();

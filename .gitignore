@@ -6,4 +6,3 @@ database/*.db-*
 package-lock.json
 .env.example
 .vscode/
-tests/

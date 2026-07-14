@@ -95,26 +95,40 @@ function createRoomTable(options = {}) {
     reassignHost(room);
 
     if (room.seats.length < 2) {
-      room.hand = null;
-      room.phase = room.seats.length === 0 ? 'idle' : 'waiting';
-      if (room.seats.length === 0) {
-        Object.assign(room, emptyRoom(room.id));
-      }
-      return ok({ room: publicRoom(room), aborted: true });
+      return abortHand(room, room.seats.length === 0 ? 'empty' : 'solo');
     }
 
     if (room.hand) {
       delete room.hand.hands[pccuid];
-      room.hand.finishOrder = room.hand.finishOrder.filter((id) => id !== pccuid);
       room.hand.active = room.hand.active.filter((id) => id !== pccuid);
+      if (room.hand.ringPassed) room.hand.ringPassed.delete(pccuid);
+      if (room.hand.lastPlayer === pccuid) room.hand.lastPlayer = null;
       if (room.hand.currentTurn === pccuid) {
-        advanceTurn(room);
+        if (room.hand.freeLead) {
+          skipFreeLeadTurn(room);
+        } else {
+          advanceTurn(room);
+        }
       }
       if (room.hand.active.length <= 1) {
         return finalizeHand(room);
       }
+      closeRingIfNeeded(room);
     }
     return ok({ room: publicRoom(room) });
+  }
+
+  function abortHand(room, reason) {
+    room.hand = null;
+    room.phase = room.seats.length === 0 ? 'idle' : 'waiting';
+    if (room.seats.length === 0) {
+      Object.assign(room, emptyRoom(room.id));
+    }
+    return ok({
+      room: publicRoom(room),
+      aborted: true,
+      abortReason: reason,
+    });
   }
 
   function start(pccuid) {
@@ -154,6 +168,7 @@ function createRoomTable(options = {}) {
       active: [...active],
       finishOrder: [],
       currentTurn: opener,
+      openerPccuid: opener,
       lastCombo: null,
       lastPlayer: null,
       freeLead: true,
@@ -185,7 +200,11 @@ function createRoomTable(options = {}) {
       lastCombo: hand.freeLead ? null : hand.lastCombo,
       freeLead: hand.freeLead,
       mustIncludeCardId:
-        hand.mustIncludeOpening && hand.freeLead ? hand.openingCardId : null,
+        hand.mustIncludeOpening &&
+        hand.freeLead &&
+        hand.currentTurn === hand.openerPccuid
+          ? hand.openingCardId
+          : null,
     });
     if (!result.ok) return err(result.code, result.message);
 
@@ -218,23 +237,30 @@ function createRoomTable(options = {}) {
     if (hand.freeLead) return err('CANNOT_PASS', 'Không thể bỏ lượt khi mở bài');
 
     hand.ringPassed.add(pccuid);
-    const need = hand.active.length - 1;
-    if (hand.ringPassed.size >= need) {
-      let winner = hand.lastPlayer;
-      if (!winner || !hand.active.includes(winner)) {
-        winner = nextActive(hand, pccuid);
-      }
-      hand.lastCombo = null;
-      hand.lastPlayer = null;
-      hand.freeLead = true;
-      hand.ringPassed = new Set();
-      hand.currentTurn = winner;
-      hand.turnDeadline = Date.now() + turnTimeoutMs;
+    if (closeRingIfNeeded(room)) {
       return ok({ room: publicRoom(room), ringWonBy: hand.currentTurn });
     }
 
     advanceTurn(room);
     return ok({ room: publicRoom(room) });
+  }
+
+  function closeRingIfNeeded(room) {
+    const { hand } = room;
+    if (!hand || hand.freeLead) return false;
+    const need = hand.active.length - 1;
+    if (need < 1 || hand.ringPassed.size < need) return false;
+    let winner = hand.lastPlayer;
+    if (!winner || !hand.active.includes(winner)) {
+      winner = nextActive(hand, hand.currentTurn);
+    }
+    hand.lastCombo = null;
+    hand.lastPlayer = null;
+    hand.freeLead = true;
+    hand.ringPassed = new Set();
+    hand.currentTurn = winner;
+    hand.turnDeadline = Date.now() + turnTimeoutMs;
+    return true;
   }
 
   function disconnect(pccuid, now = Date.now()) {
@@ -284,8 +310,8 @@ function createRoomTable(options = {}) {
       if (room.phase === 'playing' && room.hand && now >= room.hand.turnDeadline) {
         const turn = room.hand.currentTurn;
         if (room.hand.freeLead) {
-          autoLeadLowest(room);
-          events.push({ type: 'auto-lead', pccuid: turn, room: publicRoom(room) });
+          const r = skipFreeLead(turn);
+          events.push({ type: 'free-lead-skip', pccuid: turn, result: r });
         } else {
           const r = pass(turn);
           events.push({ type: 'auto-pass', pccuid: turn, result: r });
@@ -295,19 +321,23 @@ function createRoomTable(options = {}) {
     return events;
   }
 
-  function autoLeadLowest(room) {
+  function skipFreeLead(pccuid) {
+    const room = requirePlayerPlaying(pccuid);
+    if (room.error) return room;
     const { hand } = room;
-    const cards = hand.hands[hand.currentTurn];
-    if (!cards || cards.length === 0) return;
-    let pick = [cards[0]];
-    if (
-      hand.mustIncludeOpening &&
-      hand.openingCardId != null &&
-      cards.includes(hand.openingCardId)
-    ) {
-      pick = [hand.openingCardId];
+    if (hand.currentTurn !== pccuid) return err('NOT_YOUR_TURN', 'Không phải lượt của bạn');
+    if (!hand.freeLead) return err('BAD_PHASE', 'Chỉ bỏ free lead khi mở bài');
+    skipFreeLeadTurn(room);
+    return ok({ room: publicRoom(room), freeLeadSkipped: true });
+  }
+
+  function skipFreeLeadTurn(room) {
+    const { hand } = room;
+    if (hand.mustIncludeOpening && hand.currentTurn === hand.openerPccuid) {
+      hand.mustIncludeOpening = false;
     }
-    play(hand.currentTurn, pick);
+    hand.currentTurn = nextActive(hand, hand.currentTurn);
+    hand.turnDeadline = Date.now() + turnTimeoutMs;
   }
 
   function getPrivateHand(pccuid) {
@@ -388,7 +418,9 @@ function createRoomTable(options = {}) {
           currentTurn: hand.currentTurn,
           freeLead: hand.freeLead,
           openingCardId: hand.openingCardId,
-          mustIncludeOpening: hand.mustIncludeOpening,
+          openerPccuid: hand.openerPccuid,
+          mustIncludeOpening:
+            hand.mustIncludeOpening && hand.currentTurn === hand.openerPccuid,
           lastCombo: hand.lastCombo
             ? { type: hand.lastCombo.type, cards: hand.lastCombo.cards, topCard: hand.lastCombo.topCard, length: hand.lastCombo.length, pairCount: hand.lastCombo.pairCount }
             : null,

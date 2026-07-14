@@ -54,7 +54,13 @@ function attachTienlenSockets(io) {
       const result = table.leave(socket.data.player.pccuid);
       if (roomId != null) {
         socket.leave(roomChannel(roomId));
+        if (result.aborted) {
+          emitHandAborted(io, roomId, result.abortReason);
+        }
         broadcastRoom(io, table, roomId);
+        if (result.finished) {
+          io.to(roomChannel(roomId)).emit('hand:finished', result.finished);
+        }
       }
       reply(ack, socket, result);
     });
@@ -150,13 +156,13 @@ function attachTienlenSockets(io) {
     for (const ev of events) {
       const room = ev.room || ev.result?.room;
       if (room) {
+        if (ev.result?.aborted) {
+          emitHandAborted(io, room.id, ev.result.abortReason);
+        }
         broadcastRoom(io, table, room.id);
         if (ev.result?.finished) {
           io.to(roomChannel(room.id)).emit('hand:finished', ev.result.finished);
         }
-      }
-      if (ev.type === 'auto-lead' && ev.pccuid) {
-        emitPrivateHand(io, table, ev.pccuid);
       }
     }
   }, 1000);
@@ -168,6 +174,12 @@ function attachTienlenSockets(io) {
 
 function roomChannel(roomId) {
   return `room:${roomId}`;
+}
+
+function emitHandAborted(io, roomId, reason) {
+  io.to(roomChannel(roomId)).emit('hand:aborted', {
+    reason: reason || 'solo',
+  });
 }
 
 function broadcastRoom(io, table, roomId) {
