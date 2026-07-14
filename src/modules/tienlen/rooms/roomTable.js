@@ -9,7 +9,8 @@ const ROOM_IDS = [1, 2, 3];
 const MAX_SEATS = 4;
 
 function createRoomTable(options = {}) {
-  const turnTimeoutMs = options.turnTimeoutMs ?? 15_000;
+  const turnTimeoutMs = options.turnTimeoutMs ?? 30_000;
+  const dealGraceMs = options.dealGraceMs ?? 8_000;
   const reconnectMs = options.reconnectMs ?? 60_000;
   const random = options.random ?? Math.random;
   const onSettle = options.onSettle ?? (async () => { });
@@ -175,7 +176,7 @@ function createRoomTable(options = {}) {
       openingCardId,
       mustIncludeOpening: true,
       ringPassed: new Set(),
-      turnDeadline: Date.now() + turnTimeoutMs,
+      turnDeadline: Date.now() + turnTimeoutMs + dealGraceMs,
     };
 
     return ok({

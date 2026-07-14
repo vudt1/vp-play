@@ -30,6 +30,7 @@
     tableCards: [],
     opponentStacks: {},
     animating: false,
+    localWinSfxPlayed: false,
     destroyed: false,
   };
 
@@ -483,6 +484,7 @@
     state.hand = [];
     state.selected.clear();
     state.animating = false;
+    state.localWinSfxPlayed = false;
     clearHandSprites();
     clearTableCards();
     clearOpponentStacks();
@@ -530,6 +532,7 @@
         return card;
       });
       state.animating = true;
+      renderTurnTimer();
       await Animations.dealCards(cards, positions, { x: 960, y: 420 });
       deck.showStock(0);
       for (const card of cards) {
@@ -537,6 +540,7 @@
         card.setInteractive(true, onCardTap);
       }
       state.animating = false;
+      renderTurnTimer();
     } else {
       const keep = new Set(ids);
       for (const [id, card] of [...state.cardSprites.entries()]) {
@@ -641,7 +645,7 @@
   function renderTurnTimer() {
     const h = state.room?.hand;
     const timer = ui.turnTimer;
-    if (!h || h.turnDeadline == null || !h.currentTurn) {
+    if (!h || h.turnDeadline == null || !h.currentTurn || state.animating) {
       timer.text = '';
       return;
     }
@@ -652,6 +656,22 @@
     const mine = me && h.currentTurn === me;
     timer.text = mine ? `Lượt của bạn · ${sec}s` : `${name} · ${sec}s`;
     timer.style.fill = sec <= 5 ? 0xf07178 : mine ? 0x22c55e : 0xe7ecf3;
+  }
+
+  function isFreshDealHand(room) {
+    const h = room?.hand;
+    if (!h) return false;
+    if (!h.freeLead || !h.mustIncludeOpening || h.lastCombo) return false;
+    const counts = h.cardCounts || {};
+    const seats = room.seats || [];
+    if (!seats.length) return false;
+    return seats.every((s) => counts[s.pccuid] === 13);
+  }
+
+  function playLocalWinSfx() {
+    if (state.localWinSfxPlayed) return;
+    state.localWinSfxPlayed = true;
+    if (globalThis.SoundManager) SoundManager.play('win');
   }
 
   async function syncTableFromRoom() {
@@ -723,14 +743,17 @@
       const played = cardIds.map((id) => state.cardSprites.get(id)).filter(Boolean);
       state.selected.clear();
       state.hand = state.hand.filter((c) => !cardIds.includes(c));
+      if (state.hand.length === 0) playLocalWinSfx();
       if (played.length) {
         state.animating = true;
+        renderTurnTimer();
         await Animations.playToTable(played, { x: 960, y: 480 });
         for (const c of played) {
           state.cardSprites.delete(c.cardId);
           state.tableCards.push(c);
         }
         state.animating = false;
+        renderTurnTimer();
       }
       await renderHand(false);
       render();
@@ -834,7 +857,9 @@
     });
 
     state.socket.on('hand:dealt', async ({ cards }) => {
-      await applyPrivateHand(cards, { dealAnim: true });
+      const dealAnim = isFreshDealHand(state.room);
+      if (dealAnim) state.localWinSfxPlayed = false;
+      await applyPrivateHand(cards, { dealAnim });
       render();
     });
 
@@ -870,7 +895,10 @@
         statusText,
       });
       if (mine != null && mine > 0) {
-        Animations.celebrateWin(layers.ui, 960, 400);
+        Animations.celebrateWin(layers.ui, 960, 400, {
+          playSound: !state.localWinSfxPlayed,
+        });
+        state.localWinSfxPlayed = true;
       } else if (mine != null && mine < 0) {
         Animations.showBanner(layers.ui, 'Thua ván', 0xff4444);
       }

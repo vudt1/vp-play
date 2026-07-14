@@ -58,8 +58,9 @@
       );
     },
 
-    celebrateWin(stage, x, y) {
-      if (global.SoundManager) global.SoundManager.play('win');
+    celebrateWin(stage, x, y, opts = {}) {
+      const playSound = opts.playSound !== false;
+      if (playSound && global.SoundManager) global.SoundManager.play('win');
       for (let i = 0; i < 28; i += 1) {
         const particle = new PIXI.Graphics();
         const colors = [0xff6b6b, 0xffd93d, 0x6bcb77, 0x4d96ff, 0xff6bff];

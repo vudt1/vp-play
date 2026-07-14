@@ -7,6 +7,7 @@ const { env } = require('../../config/env');
 function attachTienlenSockets(io) {
   const table = createRoomTable({
     turnTimeoutMs: env.turnTimeoutMs,
+    dealGraceMs: env.dealGraceMs,
     reconnectMs: env.reconnectMs,
     onSettle: async (payload) => {
       applyPoints(payload.pointsDelta);

@@ -52,6 +52,10 @@ _Avoid_: First turn only, 3♠ rule (as the sole name)
 Lá có card id nhỏ nhất trong mọi tay đã deal của Hand; public state có thể expose `openingCardId` và `mustIncludeOpening` cho đến khi opener mở thành công hoặc free-lead skip khỏi opener.
 _Avoid_: 3 of spades (as the only name), seed card
 
+**Deal grace**:
+Khoảng chờ sau khi chia bài trước khi lượt đầu của Hand được tính hết giờ (bù thời gian animation chia bài trên client). Chỉ áp dụng cho `turnDeadline` lần đầu sau deal; các lượt sau không cộng thêm.
+_Avoid_: deal delay, animation timeout, turn padding (as domain names)
+
 **Beat**:
 Chặn được combo trước: cùng kiểu và top cao hơn, hoặc special (tứ quý / đôi thông vs 2, v.v.).
 _Avoid_: Cut, chặn (in code identifiers)
