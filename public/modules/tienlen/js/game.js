@@ -200,6 +200,8 @@
     return map;
   }
 
+  const SEAT_TIMER_GAP = 20;
+
   function ensureSeatView(key) {
     if (seatViews[key]) return seatViews[key];
     const pos = SEAT_LAYOUT[key];
@@ -226,12 +228,48 @@
     name.x = pos.align === 'left' ? -58 : pos.align === 'right' ? 58 : 0;
     name.y = 0;
 
+    const timer = new PIXI.Text({
+      text: '',
+      style: {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: 26,
+        fill: 0xe7ecf3,
+        fontWeight: '700',
+      },
+    });
+    timer.anchor.set(0.5);
+
     g.addChild(light);
     g.addChild(name);
+    g.addChild(timer);
     layers.seats.addChild(g);
 
-    seatViews[key] = { g, light, name, blinkTween: null };
+    seatViews[key] = { g, light, name, timer, slot: key, blinkTween: null };
+    layoutSeatTimer(seatViews[key]);
     return seatViews[key];
+  }
+
+  function layoutSeatTimer(view) {
+    const timer = view.timer;
+    const name = view.name;
+    if (!timer || !name) return;
+    const gap = SEAT_TIMER_GAP;
+    const slot = view.slot;
+    if (slot === 'top') {
+      timer.anchor.set(0.5);
+      timer.x = 0;
+      timer.y = 40;
+      return;
+    }
+    if (slot === 'right') {
+      timer.anchor.set(1, 0.5);
+      timer.x = name.x - name.width - gap;
+      timer.y = 0;
+      return;
+    }
+    timer.anchor.set(0, 0.5);
+    timer.x = name.x + name.width + gap;
+    timer.y = 0;
   }
 
   function setLightActive(view, active) {
@@ -375,20 +413,6 @@
     error.y = 348;
     parent.addChild(error);
 
-    const turnTimer = new PIXI.Text({
-      text: '',
-      style: {
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 36,
-        fill: 0xe7ecf3,
-        fontWeight: '700',
-      },
-    });
-    turnTimer.anchor.set(0.5);
-    turnTimer.x = 960;
-    turnTimer.y = 250;
-    parent.addChild(turnTimer);
-
     function makeButton(label, x, y, primary, opts = {}) {
       const padX = opts.padX ?? 28;
       const height = opts.height ?? 56;
@@ -444,7 +468,7 @@
     const btnPlay = makeButton('Đánh', 746, 996, true, { minWidth: 188 });
     const btnPass = makeButton('Bỏ lượt', 954, 996, false, { minWidth: 188 });
 
-    return { status, last, error, turnTimer, btnStart, btnLeave, btnPlay, btnPass };
+    return { status, last, error, btnStart, btnLeave, btnPlay, btnPass };
   }
 
   function showError(err) {
@@ -490,7 +514,7 @@
     clearOpponentStacks();
     killSeatBlinks();
     ui.last.text = '';
-    ui.turnTimer.text = '';
+    clearTurnTimers();
     ui.error.text = '';
     try {
       if (typeof gsap !== 'undefined') gsap.globalTimeline.clear();
@@ -610,6 +634,7 @@
       const host = room.hostPccuid === seat.pccuid ? ' · Host' : '';
       const offline = seat.connected === false ? ' (offline)' : '';
       view.name.text = `${seat.displayName}${host}${offline}`;
+      layoutSeatTimer(view);
       setLightActive(view, room.hand?.currentTurn === seat.pccuid);
     }
     if (room.hand?.cardCounts) {
@@ -642,20 +667,40 @@
     return sec;
   }
 
+  function turnTimerFill(sec, mine) {
+    if (sec <= 5) return 0xf07178;
+    if (mine) return 0x4ade80;
+    return 0xe7ecf3;
+  }
+
+  function clearTurnTimers() {
+    for (const view of Object.values(seatViews)) {
+      if (view.timer) view.timer.text = '';
+    }
+  }
+
   function renderTurnTimer() {
     const h = state.room?.hand;
-    const timer = ui.turnTimer;
     if (!h || h.turnDeadline == null || !h.currentTurn || state.animating) {
-      timer.text = '';
+      clearTurnTimers();
       return;
     }
     const me = state.profile?.pccuid;
-    const seat = (state.room.seats || []).find((s) => s.pccuid === h.currentTurn);
-    const name = seat?.displayName || h.currentTurn;
     const sec = formatTurnSeconds(h.turnDeadline - Date.now());
-    const mine = me && h.currentTurn === me;
-    timer.text = mine ? `Lượt của bạn · ${sec}s` : `${name} · ${sec}s`;
-    timer.style.fill = sec <= 5 ? 0xf07178 : mine ? 0x22c55e : 0xe7ecf3;
+    const mine = !!(me && h.currentTurn === me);
+    const fill = turnTimerFill(sec, mine);
+    const map = me ? relativeSeatMap(state.room, me) : {};
+    const activeSlot = map[h.currentTurn];
+    for (const [slot, view] of Object.entries(seatViews)) {
+      if (!view.timer) continue;
+      if (slot === activeSlot && view.g.visible) {
+        view.timer.text = `${sec}s`;
+        view.timer.style.fill = fill;
+        layoutSeatTimer(view);
+      } else {
+        view.timer.text = '';
+      }
+    }
   }
 
   function isFreshDealHand(room) {
@@ -704,7 +749,7 @@
       renderSeats();
       updateActionButtons();
       ui.last.text = '';
-      ui.turnTimer.text = '';
+      clearTurnTimers();
       return;
     }
     ui.status.text = `Phòng ${room.id} · ${room.phase} · ${room.seats.length}/4`;
