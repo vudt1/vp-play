@@ -209,10 +209,14 @@
     g.x = pos.x;
     g.y = pos.y;
 
+    const glow = new PIXI.Graphics();
+    glow.x = pos.align === 'left' ? -88 : pos.align === 'right' ? 88 : -110;
+    glow.y = 0;
+
     const light = new PIXI.Graphics();
     light.circle(0, 0, 16);
     light.fill(0x2a3548);
-    light.x = pos.align === 'left' ? -88 : pos.align === 'right' ? 88 : -110;
+    light.x = glow.x;
     light.y = 0;
 
     const name = new PIXI.Text({
@@ -239,12 +243,13 @@
     });
     timer.anchor.set(0.5);
 
+    g.addChild(glow);
     g.addChild(light);
     g.addChild(name);
     g.addChild(timer);
     layers.seats.addChild(g);
 
-    seatViews[key] = { g, light, name, timer, slot: key, blinkTween: null };
+    seatViews[key] = { g, light, glow, name, timer, slot: key, blinkTween: null, glowTween: null, glowAlphaTween: null };
     layoutSeatTimer(seatViews[key]);
     return seatViews[key];
   }
@@ -277,21 +282,55 @@
       view.blinkTween.kill();
       view.blinkTween = null;
     }
+    if (view.glowTween) {
+      view.glowTween.kill();
+      view.glowTween = null;
+    }
+    if (view.glowAlphaTween) {
+      view.glowAlphaTween.kill();
+      view.glowAlphaTween = null;
+    }
     view.light.clear();
+    if (view.glow) {
+      view.glow.clear();
+    }
     if (active) {
       view.light.circle(0, 0, 18);
       view.light.fill(0x22c55e);
       view.blinkTween = gsap.to(view.light, {
-        alpha: 0.25,
-        duration: 0.55,
+        alpha: 0.8,
+        duration: 0.8,
         yoyo: true,
         repeat: -1,
         ease: 'sine.inOut',
       });
+      if (view.glow) {
+        view.glow.circle(0, 0, 18);
+        view.glow.fill(0x22c55e);
+        view.glow.scale.set(1);
+        view.glow.alpha = 0.6;
+        view.glowTween = gsap.to(view.glow.scale, {
+          x: 2.2,
+          y: 2.2,
+          duration: 1.5,
+          repeat: -1,
+          ease: 'quad.out',
+        });
+        view.glowAlphaTween = gsap.to(view.glow, {
+          alpha: 0,
+          duration: 1.5,
+          repeat: -1,
+          ease: 'quad.out',
+        });
+      }
     } else {
       view.light.alpha = 1;
       view.light.circle(0, 0, 16);
       view.light.fill(0x2a3548);
+      if (view.glow) {
+        view.glow.scale.set(1);
+        view.glow.alpha = 1;
+      }
     }
   }
 
@@ -499,6 +538,14 @@
       if (v.blinkTween) {
         v.blinkTween.kill();
         v.blinkTween = null;
+      }
+      if (v.glowTween) {
+        v.glowTween.kill();
+        v.glowTween = null;
+      }
+      if (v.glowAlphaTween) {
+        v.glowAlphaTween.kill();
+        v.glowAlphaTween = null;
       }
       setLightActive(v, false);
     });
