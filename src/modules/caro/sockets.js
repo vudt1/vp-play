@@ -84,7 +84,10 @@ function attachCaroSockets(io) {
       if (roomId != null && result.moved) {
         nsp.to(roomChannel(roomId)).emit('match:moved', result.moved);
         if (result.finished) {
-          nsp.to(roomChannel(roomId)).emit('match:finished', result.finished);
+          nsp.to(roomChannel(roomId)).emit('match:finished', {
+            ...result.finished,
+            room: result.room,
+          });
         }
         broadcastRoom(nsp, table, roomId);
       }

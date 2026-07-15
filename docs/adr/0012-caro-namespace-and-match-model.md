@@ -1,0 +1,3 @@
+# Caro: Socket.IO namespace `/caro` and Match model
+
+Caro is a second multiplayer Module (2 seats, 3 fixed rooms) that must not collide with Tiến Lên’s default-namespace `room:*` handlers and `room:N` channels. Client and portal lobby for Caro connect via `io.of('/caro')` (same JWT middleware pattern as the hub; path still `/socket.io` under `APP_PREFIX`). Match lifecycle events use `room:*` + `match:*` inside that namespace; scoring uses shared `applyPoints` only on clean win (+1/−1). Mid-Match disconnect or leave aborts as draw with no points (no reconnect hold). Host always plays Mark X and starts; no turn timeout for MVP.

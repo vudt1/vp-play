@@ -6,6 +6,7 @@ Caro.createBoardView = function createBoardView(opts) {
     Caro.CONST;
 
   const markSprites = new Map();
+  const winLineG = new PIXI.Graphics();
   const centeredY = Math.round((BASE_H - BOARD_PX) / 2);
   const origin = {
     x: Math.round((BASE_W - BOARD_PX) / 2),
@@ -55,6 +56,7 @@ Caro.createBoardView = function createBoardView(opts) {
     layers.board.y = origin.y;
     layers.marks.x = origin.x;
     layers.marks.y = origin.y;
+    layers.marks.addChild(winLineG);
   }
 
   function placeMark(row, col, markVal, { animate = true } = {}) {
@@ -86,6 +88,11 @@ Caro.createBoardView = function createBoardView(opts) {
     }
   }
 
+  function clearWinLine() {
+    winLineG.clear();
+    winLineG.visible = false;
+  }
+
   function clearMarks() {
     for (const spr of markSprites.values()) {
       try {
@@ -96,18 +103,20 @@ Caro.createBoardView = function createBoardView(opts) {
       spr.destroy();
     }
     markSprites.clear();
+    clearWinLine();
     layers.marks.removeChildren();
+    layers.marks.addChild(winLineG);
   }
 
-  function syncFromMatch(match, { animateNew = false } = {}) {
-    if (!match?.board) {
+  function syncFromBoard(board, { animateNew = false } = {}) {
+    if (!board) {
       clearMarks();
       return;
     }
     const seen = new Set();
     for (let r = 0; r < BOARD_SIZE; r++) {
       for (let c = 0; c < BOARD_SIZE; c++) {
-        const v = match.board[r][c];
+        const v = board[r]?.[c];
         if (!v) continue;
         const key = markKey(r, c);
         seen.add(key);
@@ -129,13 +138,48 @@ Caro.createBoardView = function createBoardView(opts) {
     }
   }
 
+  function syncFromMatch(match, opts) {
+    syncFromBoard(match?.board, opts);
+  }
+
+  function showWinLine(cells) {
+    clearWinLine();
+    if (!Array.isArray(cells) || cells.length < 2) return;
+    const first = cells[0];
+    const last = cells[cells.length - 1];
+    if (!first || !last) return;
+    const a = cellCenter(first[0], first[1]);
+    const b = cellCenter(last[0], last[1]);
+    winLineG.visible = true;
+    winLineG.moveTo(a.x, a.y);
+    winLineG.lineTo(b.x, b.y);
+    winLineG.stroke({
+      width: Math.max(6, CELL * 0.12),
+      color: COLOR.winLine || COLOR.turnGlow,
+      alpha: 0.95,
+      cap: 'round',
+    });
+    winLineG.moveTo(a.x, a.y);
+    winLineG.lineTo(b.x, b.y);
+    winLineG.stroke({
+      width: Math.max(3, CELL * 0.06),
+      color: 0xfff8e1,
+      alpha: 0.9,
+      cap: 'round',
+    });
+    layers.marks.addChild(winLineG);
+  }
+
   drawBoard();
 
   return {
     origin,
     placeMark,
     clearMarks,
+    clearWinLine,
     syncFromMatch,
+    syncFromBoard,
+    showWinLine,
     hasMark(row, col) {
       return markSprites.has(markKey(row, col));
     },

@@ -19,6 +19,7 @@ Caro.CONST = {
     btnHover: 0x3a465c,
     turnRing: 0xffe082,
     turnGlow: 0xffd54f,
+    winLine: 0xffc107,
   },
   MARK: { X: 1, O: 2, 1: 'X', 2: 'O' },
 };

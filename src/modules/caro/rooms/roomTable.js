@@ -28,6 +28,7 @@ function createRoomTable(options = {}) {
       seats: [],
       hostPccuid: null,
       match: null,
+      lastResult: null,
     };
   }
 
@@ -48,6 +49,21 @@ function createRoomTable(options = {}) {
             currentTurn: room.match.currentTurn,
             turnPccuid: room.match.currentTurn,
             marks: { ...room.match.marks },
+          }
+        : null,
+      lastResult: room.lastResult
+        ? {
+            result: room.lastResult.result,
+            winnerId: room.lastResult.winnerId,
+            winnerPccuid: room.lastResult.winnerPccuid,
+            pointsDelta: { ...room.lastResult.pointsDelta },
+            board: room.lastResult.board
+              ? room.lastResult.board.map((row) => row.slice())
+              : null,
+            winLine: (room.lastResult.winLine || []).map((c) => c.slice()),
+            lastMove: room.lastResult.lastMove
+              ? { ...room.lastResult.lastMove }
+              : null,
           }
         : null,
     };
@@ -102,6 +118,7 @@ function createRoomTable(options = {}) {
 
   function abortMatch(room, reason) {
     room.match = null;
+    room.lastResult = null;
     room.phase = room.seats.length === 0 ? 'idle' : 'waiting';
     for (const s of room.seats) s.mark = null;
     return {
@@ -214,26 +231,32 @@ function createRoomTable(options = {}) {
         [guest.pccuid]: 'O',
       },
     };
+    room.lastResult = null;
     room.phase = 'playing';
     return ok({ room: publicRoom(room) });
   }
 
-  function settleWin(room, winnerId) {
+  function settleWin(room, winnerId, lastMove, winLine) {
     const loser = room.seats.find((s) => s.pccuid !== winnerId);
     const deltas = {};
     deltas[winnerId] = 1;
     if (loser) deltas[loser.pccuid] = -1;
 
+    const board = caroRules.cloneBoard(room.match.board);
     const finished = {
       result: 'win',
       winnerId,
       winnerPccuid: winnerId,
       pointsDelta: deltas,
       reason: 'win',
+      board,
+      winLine: winLine?.cells || [],
+      lastMove,
     };
 
     room.phase = 'waiting';
     room.match = null;
+    room.lastResult = finished;
     for (const s of room.seats) s.mark = null;
 
     Promise.resolve(
@@ -250,19 +273,25 @@ function createRoomTable(options = {}) {
     });
   }
 
-  function settleDraw(room) {
+  function settleDraw(room, lastMove) {
+    const board = room.match ? caroRules.cloneBoard(room.match.board) : null;
+    const finished = {
+      result: 'draw',
+      winnerId: null,
+      winnerPccuid: null,
+      pointsDelta: {},
+      reason: 'draw',
+      board,
+      winLine: [],
+      lastMove: lastMove || null,
+    };
     room.phase = 'waiting';
     room.match = null;
+    room.lastResult = finished;
     for (const s of room.seats) s.mark = null;
     return ok({
       room: publicRoom(room),
-      finished: {
-        result: 'draw',
-        winnerId: null,
-        winnerPccuid: null,
-        pointsDelta: {},
-        reason: 'draw',
-      },
+      finished,
     });
   }
 
@@ -285,19 +314,21 @@ function createRoomTable(options = {}) {
     }
 
     room.match.board[row][col] = val;
+    const moved = { row, col, mark, pccuid };
 
-    if (caroRules.checkWin(room.match.board, row, col, val)) {
-      const result = settleWin(room, pccuid);
+    const winLine = caroRules.findWinLine(room.match.board, row, col, val);
+    if (winLine) {
+      const result = settleWin(room, pccuid, moved, winLine);
       return {
         ...result,
-        moved: { row, col, mark, pccuid },
+        moved,
       };
     }
     if (caroRules.isBoardFull(room.match.board)) {
-      const result = settleDraw(room);
+      const result = settleDraw(room, moved);
       return {
         ...result,
-        moved: { row, col, mark, pccuid },
+        moved,
       };
     }
 
@@ -305,7 +336,7 @@ function createRoomTable(options = {}) {
     room.match.currentTurn = other ? other.pccuid : pccuid;
     return ok({
       room: publicRoom(room),
-      moved: { row, col, mark, pccuid },
+      moved,
     });
   }
 

@@ -46,47 +46,67 @@ Caro.createHudView = function createHudView(uiLayer, overlayLayer) {
     return c;
   }
 
-  const btnStart = makeButton('Bắt đầu', 220, 64);
-  btnStart.x = (BASE_W - 220) / 2;
-  btnStart.y = BASE_H - 110;
-  btnStart.visible = false;
-  uiLayer.addChild(btnStart);
+  const resultRoot = new PIXI.Container();
+  resultRoot.visible = false;
+  resultRoot.eventMode = 'none';
 
-  const overlayBg = new PIXI.Graphics();
-  overlayBg.rect(0, 0, BASE_W, BASE_H);
-  overlayBg.fill({ color: 0x000000, alpha: 0.55 });
-  overlayBg.visible = false;
-
-  const overlayText = makeText('', {
+  const resultPanel = new PIXI.Graphics();
+  const resultText = makeText('', {
     fontFamily: 'Segoe UI, system-ui, sans-serif',
-    fontSize: 48,
+    fontSize: 40,
     fill: COLOR.text,
     fontWeight: '700',
     align: 'center',
     wordWrap: true,
-    wordWrapWidth: 900,
+    wordWrapWidth: 720,
   });
-  overlayText.anchor.set(0.5);
-  overlayText.x = BASE_W / 2;
-  overlayText.y = BASE_H / 2;
-  overlayText.visible = false;
+  resultText.anchor.set(0.5);
+  resultRoot.addChild(resultPanel, resultText);
+  overlayLayer.addChild(resultRoot);
 
-  overlayLayer.addChild(overlayBg, overlayText);
+  const btnStart = makeButton('Bắt đầu', 220, 64);
+  btnStart.x = (BASE_W - 220) / 2;
+  btnStart.y = BASE_H - 110;
+  btnStart.visible = false;
+  overlayLayer.addChild(btnStart);
+
+  function layoutResult(text) {
+    resultText.text = text || '';
+    const padX = 40;
+    const padY = 22;
+    const w = Math.min(760, Math.max(320, resultText.width + padX * 2));
+    const h = Math.max(72, resultText.height + padY * 2);
+    resultPanel.clear();
+    resultPanel.roundRect(-w / 2, -h / 2, w, h, 16);
+    resultPanel.fill({ color: 0x0b0e14, alpha: 0.78 });
+    resultPanel.stroke({ width: 2, color: COLOR.turnGlow, alpha: 0.85 });
+    resultRoot.x = BASE_W / 2;
+    resultRoot.y = BASE_H - 200;
+  }
 
   return {
     btnStart,
     setStartVisible(on, enabled) {
       btnStart.visible = !!on;
       btnStart.setEnabled(!!enabled);
+      if (btnStart.visible) {
+        overlayLayer.addChild(btnStart);
+      }
+    },
+    hideResult() {
+      resultRoot.visible = false;
+    },
+    showResult(text) {
+      layoutResult(text);
+      resultRoot.visible = true;
+      overlayLayer.addChild(resultRoot);
+      if (btnStart.visible) overlayLayer.addChild(btnStart);
     },
     hideOverlay() {
-      overlayBg.visible = false;
-      overlayText.visible = false;
+      resultRoot.visible = false;
     },
     showOverlay(text) {
-      overlayText.text = text;
-      overlayBg.visible = true;
-      overlayText.visible = true;
+      this.showResult(text);
     },
   };
 };

@@ -44,7 +44,16 @@ function endBlocked(board, r, c, dr, dc, steps, opponent) {
   return board[rr][cc] === opponent;
 }
 
-function checkWin(board, r, c, playerVal) {
+function lineCells(r, c, dr, dc, back, fwd) {
+  const cells = [];
+  for (let i = -back; i <= fwd; i++) {
+    cells.push([r + dr * i, c + dc * i]);
+  }
+  return cells;
+}
+
+function findWinLine(board, r, c, playerVal) {
+  if (!inBounds(r, c) || board[r][c] !== playerVal) return null;
   const opponent = playerVal === 1 ? 2 : 1;
   const dirs = [
     [0, 1],
@@ -62,9 +71,20 @@ function checkWin(board, r, c, playerVal) {
     const blockedBack = endBlocked(board, r, c, -dr, -dc, back + 1, opponent);
     const blockedFwd = endBlocked(board, r, c, dr, dc, fwd + 1, opponent);
     if (blockedBack && blockedFwd) continue;
-    return true;
+    return {
+      cells: lineCells(r, c, dr, dc, back, fwd),
+      dir: [dr, dc],
+    };
   }
-  return false;
+  return null;
+}
+
+function checkWin(board, r, c, playerVal) {
+  return findWinLine(board, r, c, playerVal) != null;
+}
+
+function cloneBoard(board) {
+  return board.map((row) => row.slice());
 }
 
 module.exports = {
@@ -72,5 +92,7 @@ module.exports = {
   createEmptyBoard,
   isValidMove,
   checkWin,
+  findWinLine,
   isBoardFull,
+  cloneBoard,
 };

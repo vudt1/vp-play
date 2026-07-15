@@ -13,6 +13,8 @@
     room: null,
     destroyed: false,
     lastError: '',
+    endBanner: '',
+    sfxPlayedForResult: null,
   };
 
   const app = new PIXI.Application();
@@ -41,7 +43,7 @@
     { alias: 'mark-o', src: `${moduleRoot}/assets/images/o.svg` },
   ]);
 
-  const sfx = Caro.createPlaceSound(moduleRoot);
+  const sfx = Caro.createSfx(moduleRoot);
 
   const bg = new PIXI.Graphics();
   bg.rect(0, 0, C.BASE_W, C.BASE_H);
@@ -79,12 +81,68 @@
     header.setStatus(msg);
   }
 
+  function resultKey(finished) {
+    if (!finished) return null;
+    const w = finished.winnerId || finished.winnerPccuid || '';
+    const r = finished.result || '';
+    const move = finished.lastMove;
+    const m = move ? `${move.row},${move.col}` : '';
+    return `${r}:${w}:${m}`;
+  }
+
+  function finishedMessage(finished) {
+    const me = state.profile?.pccuid;
+    if (!finished) return 'Hòa';
+    if (finished.result === 'win' || finished.winnerId) {
+      const win = finished.winnerId === me;
+      const delta = finished.pointsDelta?.[me];
+      const pts =
+        delta != null ? ` (${delta >= 0 ? '+' : ''}${delta})` : win ? ' (+1)' : ' (−1)';
+      return win ? `Bạn thắng!${pts}` : `Bạn thua${pts}`;
+    }
+    if (finished.result === 'draw') return 'Hòa — bàn đầy';
+    return 'Hòa';
+  }
+
+  function applyFinishedVisual(finished, { playSfx = true } = {}) {
+    if (!finished) return;
+    if (finished.board) {
+      boardView.syncFromBoard(finished.board, { animateNew: false });
+    }
+    if (finished.winLine?.length) {
+      boardView.showWinLine(finished.winLine);
+    } else {
+      boardView.clearWinLine();
+    }
+
+    const key = resultKey(finished);
+    const text = finishedMessage(finished);
+    state.endBanner = text;
+    hud.showResult(text);
+
+    if (playSfx && key && state.sfxPlayedForResult !== key) {
+      state.sfxPlayedForResult = key;
+      const me = state.profile?.pccuid;
+      if (finished.result === 'win' || finished.winnerId) {
+        if (finished.winnerId === me) sfx.playWin();
+        else sfx.playLose();
+      }
+    }
+  }
+
+  function clearEndState() {
+    state.endBanner = '';
+    state.sfxPlayedForResult = null;
+    hud.hideResult();
+    boardView.clearWinLine();
+  }
+
   function applyRoom(room) {
     if (!state.profile) return;
     if (!room) {
       state.room = null;
       boardView.clearMarks();
-      hud.hideOverlay();
+      clearEndState();
       render();
       return;
     }
@@ -92,17 +150,24 @@
     const seated = (room.seats || []).some((s) => s.pccuid === me);
     if (seated) {
       const prevPhase = state.room?.phase;
-      const prevMatch = !!state.room?.match;
       state.room = room;
+
       if (room.phase === 'playing' && room.match) {
-        if (!prevMatch || prevPhase !== 'playing') {
+        if (prevPhase !== 'playing') {
+          clearEndState();
           boardView.clearMarks();
-          boardView.syncFromMatch(room.match, { animateNew: false });
-        } else {
-          boardView.syncFromMatch(room.match, { animateNew: false });
         }
-      } else if (!room.match) {
-        boardView.clearMarks();
+        boardView.syncFromMatch(room.match, { animateNew: false });
+        hud.hideResult();
+        state.endBanner = '';
+      } else if (room.lastResult?.board) {
+        applyFinishedVisual(room.lastResult, { playSfx: false });
+      } else if (!room.match && !room.lastResult) {
+        if (prevPhase === 'playing') {
+          /* keep board if mid-transition */
+        } else if (!state.endBanner) {
+          boardView.clearMarks();
+        }
       }
       render();
       return;
@@ -110,7 +175,7 @@
     if (state.room && state.room.id === room.id) {
       state.room = null;
       boardView.clearMarks();
-      hud.hideOverlay();
+      clearEndState();
       render();
     }
   }
@@ -123,10 +188,34 @@
       hud.setStartVisible(false, false);
       return;
     }
-    hud.setStartVisible(!!meta.canStart, !!meta.canStart);
+
+    const canStart = !!meta.canStart;
+    hud.setStartVisible(canStart, canStart);
+
     if (room.phase === 'playing' && room.match) {
-      hud.hideOverlay();
+      hud.hideResult();
       boardView.syncFromMatch(room.match, { animateNew: false });
+      return;
+    }
+
+    if (room.lastResult?.board) {
+      boardView.syncFromBoard(room.lastResult.board, { animateNew: false });
+      if (room.lastResult.winLine?.length) {
+        boardView.showWinLine(room.lastResult.winLine);
+      }
+      if (!state.endBanner) {
+        state.endBanner = finishedMessage(room.lastResult);
+      }
+      hud.showResult(state.endBanner);
+    } else if (state.endBanner && (room.phase === 'waiting' || room.phase === 'idle')) {
+      hud.showResult(state.endBanner);
+    }
+
+    if (meta.seatsN < 2 && state.endBanner) {
+      /* host left after match — stay usable, still show result briefly */
+      if (meta.isHost) {
+        header.turn.text = 'Bạn là Host — chờ người chơi khác';
+      }
     }
   }
 
@@ -164,7 +253,7 @@
       }
       if (Number.isInteger(row) && Number.isInteger(col)) {
         boardView.placeMark(row, col, markVal, { animate: true });
-        sfx.play();
+        sfx.playPlace();
       }
       if (state.room?.match) {
         boardView.syncFromMatch(state.room.match, { animateNew: false });
@@ -172,26 +261,18 @@
       render();
     },
     onFinished: (payload) => {
-      if (payload?.room) state.room = payload.room;
-      else if (state.room) {
+      const finished = payload?.finished || payload;
+      if (payload?.room) {
+        state.room = payload.room;
+        if (!state.room.lastResult && finished) {
+          state.room.lastResult = finished;
+        }
+      } else if (state.room) {
         state.room.phase = 'waiting';
         state.room.match = null;
+        state.room.lastResult = finished || state.room.lastResult;
       }
-      boardView.clearMarks();
-
-      const me = state.profile?.pccuid;
-      const finished = payload?.finished || payload;
-      let text = 'Hòa';
-      if (finished?.result === 'win' || finished?.winnerId) {
-        const win = finished.winnerId === me;
-        const delta = finished.pointsDelta?.[me];
-        const pts =
-          delta != null ? ` (${delta >= 0 ? '+' : ''}${delta})` : win ? ' (+1)' : ' (−1)';
-        text = win ? `Bạn thắng!${pts}` : `Bạn thua${pts}`;
-      } else if (finished?.result === 'draw') {
-        text = 'Hòa — bàn đầy';
-      }
-      hud.showOverlay(text);
+      applyFinishedVisual(finished || state.room?.lastResult, { playSfx: true });
       render();
     },
     onAborted: (payload) => {
@@ -199,9 +280,12 @@
       else if (state.room) {
         state.room.phase = state.room.seats?.length ? 'waiting' : 'idle';
         state.room.match = null;
+        state.room.lastResult = null;
       }
       boardView.clearMarks();
-      hud.showOverlay('Hòa — đối thủ rời phòng');
+      clearEndState();
+      state.endBanner = 'Hòa — đối thủ rời phòng';
+      hud.showResult(state.endBanner);
       render();
     },
     onError: showError,
@@ -209,13 +293,14 @@
 
   hud.btnStart.on('pointertap', () => {
     if (!hud.btnStart.isEnabled() || !net.socket) return;
-    hud.hideOverlay();
+    clearEndState();
+    boardView.clearMarks();
     net.emitStart((res) => {
       if (res && res.ok === false) showError(res.error);
       if (res?.ok && res.room) {
         state.room = res.room;
         boardView.clearMarks();
-        hud.hideOverlay();
+        clearEndState();
         render();
       }
     });

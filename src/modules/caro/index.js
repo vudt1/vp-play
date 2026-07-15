@@ -5,7 +5,9 @@ const {
   createEmptyBoard,
   isValidMove,
   checkWin,
+  findWinLine,
   isBoardFull,
+  cloneBoard,
 } = require('./domain/caroRules');
 const { createRoomTable, ROOM_IDS, MAX_SEATS } = require('./rooms/roomTable');
 
@@ -21,7 +23,9 @@ module.exports = {
   createEmptyBoard,
   isValidMove,
   checkWin,
+  findWinLine,
   isBoardFull,
+  cloneBoard,
   createRoomTable,
   ROOM_IDS,
   MAX_SEATS,
