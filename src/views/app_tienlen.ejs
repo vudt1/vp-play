@@ -5,6 +5,9 @@
   x-data="portalApp()"
   x-init="init()"
   data-module-kind="<%= module.kind %>"
+  data-module-id="<%= module.id %>"
+  data-max-seats="<%= module.maxSeats || 4 %>"
+  data-socket-namespace="<%= module.socketNamespace || '' %>"
 >
   <div
     class="flex flex-col items-center justify-center min-h-[50vh] gap-lg text-center"
@@ -93,7 +96,7 @@
             <div class="font-headline-md text-body-lg text-on-surface">
               Phòng <span x-text="room.id"></span>
             </div>
-            <div class="text-outline font-label-sm text-label-sm" x-text="phaseLabel(room.phase) + ' · ' + room.seats.length + '/4'"></div>
+            <div class="text-outline font-label-sm text-label-sm" x-text="phaseLabel(room.phase) + ' · ' + room.seats.length + '/' + maxSeats"></div>
             <ul class="list-none p-0 m-0 flex flex-col gap-xs text-body-md text-on-surface-variant">
               <template x-for="s in room.seats" :key="s.pccuid">
                 <li x-text="s.displayName + (s.pccuid === room.hostPccuid ? ' (Host)' : '')"></li>

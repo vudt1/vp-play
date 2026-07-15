@@ -2,6 +2,8 @@ function portalApp() {
   const base = window.VP_BASE || '';
   const root = document.querySelector('.app-page');
   const moduleKind = root?.dataset?.moduleKind || 'multiplayer';
+  const maxSeats = Number(root?.dataset?.maxSeats) || 4;
+  const socketNamespace = (root?.dataset?.socketNamespace || '').trim();
   const BUSY_PHASES = new Set(['playing', 'settling']);
 
   function apiUrl(p) {
@@ -36,6 +38,7 @@ function portalApp() {
     authReady: false,
     seatedRoomId: null,
     joinError: null,
+    maxSeats,
     _leaveBound: null,
     _navBound: null,
     _leaving: false,
@@ -165,7 +168,10 @@ function portalApp() {
 
     connectSocket() {
       if (this.socket) this.socket.disconnect();
-      this.socket = io({ path: socketPath(), auth: { token: this.token } });
+      const opts = { path: socketPath(), auth: { token: this.token } };
+      this.socket = socketNamespace
+        ? io(socketNamespace, opts)
+        : io(opts);
       this.socket.on('connect', () => {
         this.socket.emit('room:list');
       });
@@ -181,9 +187,13 @@ function portalApp() {
         else if (room?.id != null) this.rooms.push(room);
         this.syncSeated();
       });
-      this.socket.on('hand:finished', () => {
+      const refreshList = () => {
         this.socket?.emit('room:list');
-      });
+      };
+      this.socket.on('hand:finished', refreshList);
+      this.socket.on('hand:aborted', refreshList);
+      this.socket.on('match:finished', refreshList);
+      this.socket.on('match:aborted', refreshList);
       if (this.socket.connected) this.socket.emit('room:list');
     },
 
@@ -220,7 +230,7 @@ function portalApp() {
       if (this.inRoom(room.id)) return false;
       if (this.seatedRoomId != null) return false;
       if (BUSY_PHASES.has(room.phase)) return false;
-      if (room.seats.length >= 4) return false;
+      if (room.seats.length >= this.maxSeats) return false;
       return true;
     },
 

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <!-- Define a red gradient for X -->
+    <linearGradient id="brushRedX" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff1a1a" />
+      <stop offset="50%" stop-color="#cc0000" />
+      <stop offset="100%" stop-color="#990000" />
+    </linearGradient>
+  </defs>
+  
+  <g fill="url(#brushRedX)">
+    <!-- Stroke 1: Top-Left to Bottom-Right with stylized brush tips -->
+    <path d="M 35,28 
+             C 45,25 55,40 70,60 
+             C 85,80 115,120 145,150 
+             C 155,160 168,175 160,178 
+             C 152,181 140,165 130,152 
+             C 105,122 75,85 50,60 
+             C 38,48 25,31 35,28 Z" />
+             
+    <!-- Stroke 2: Top-Right to Bottom-Left -->
+    <path d="M 165,30 
+             C 172,35 158,52 142,72 
+             C 122,97 90,132 55,165 
+             C 45,175 32,182 30,175 
+             C 28,168 40,152 52,138 
+             C 82,105 118,65 142,42 
+             C 152,32 158,25 165,30 Z" />
+  </g>
+  
+  <!-- Outer brush bristles details for stroke texture -->
+  <g fill="#cc0000" opacity="0.6">
+    <!-- Splatters / bristles top-left -->
+    <path d="M 33,25 C 38,35 48,50 58,65 C 55,65 45,50 36,38 C 30,30 31,23 33,25 Z" />
+    <!-- Bristles bottom-right -->
+    <path d="M 148,150 C 158,160 168,172 170,175 C 165,173 155,162 145,152 Z" />
+    <!-- Bristles top-right -->
+    <path d="M 160,28 C 158,35 145,50 135,62 C 140,52 152,38 158,30 Z" />
+    <!-- Bristles bottom-left -->
+    <path d="M 40,155 C 32,165 25,172 26,174 C 29,170 38,160 45,150 Z" />
+  </g>
+</svg>

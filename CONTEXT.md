@@ -17,7 +17,7 @@ Trang portal của một Module (chi tiết + play chrome); Module multiplayer c
 _Avoid_: Game page, lobby (alone)
 
 **Room**:
-Một trong ba slot sảnh cố định trong Module multiplayer, tối đa bốn ghế.
+Một trong ba slot sảnh cố định trong Module multiplayer; số ghế tối đa do Module quy định (catalog `maxSeats`).
 _Avoid_: Lobby table, match, session
 
 **Host**:
@@ -25,8 +25,20 @@ Người ngồi ghế được quyền Start; người vào phòng trước; chu
 _Avoid_: Owner, admin
 
 **Hand**:
-Một ván chia bài đến khi xếp hạng xong.
+Một ván chia bài (Tiến Lên) đến khi xếp hạng xong.
 _Avoid_: Game, match, round (ambiguous)
+
+**Match**:
+Một ván chơi board-game (Caro) từ Start đến win, full-board draw, hoặc abort; khác Hand (card).
+_Avoid_: Game, hand, round (as the domain name for board modules)
+
+**Mark**:
+Quân cờ Caro của một ghế trong Match: X (Host, đi trước) hoặc O (guest).
+_Avoid_: Piece, stone, symbol (as domain name)
+
+**Block-two-ends**:
+Luật thắng Caro Việt Nam: chuỗi ≥5 Mark cùng loại chỉ thắng khi không bị Mark đối thủ chặn cả hai đầu chuỗi; biên bàn không tính là chặn.
+_Avoid_: Open-ended five, renju
 
 **Ring**:
 Chuỗi lượt đánh cho đến khi N−1 người bỏ lượt; người không bỏ giành quyền mở tự do. Ai đã pass trong Ring mất quyền đánh cho đến khi Ring kết thúc.
@@ -39,6 +51,10 @@ _Avoid_: Auto-lead, auto-play on timeout
 **Hand abort**:
 Hủy Hand giữa chừng khi còn dưới hai ghế (rời phòng / mất kết nối hết hạn); hòa, không ghi điểm; phòng về waiting hoặc idle.
 _Avoid_: Draw match (as code id), forfeit, cancel game
+
+**Match abort**:
+Hủy Match giữa chừng (rời phòng hoặc disconnect ngay); hòa, không ghi điểm; phòng về waiting hoặc idle.
+_Avoid_: Forfeit, cancel game, disconnect hold (Caro không giữ ghế RECONNECT_MS)
 
 **Combo**:
 Tổ hợp bài hợp lệ: rác, đôi, sám, tứ quý, sảnh (≥3, không 2), ba/bốn đôi thông (không 2).

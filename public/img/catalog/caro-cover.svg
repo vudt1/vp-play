@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="70%" r="75%">
+      <stop offset="0%" stop-color="#1a3a4a"/>
+      <stop offset="100%" stop-color="#050a0e"/>
+    </radialGradient>
+    <linearGradient id="board" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9e7"/>
+      <stop offset="100%" stop-color="#e8d5a3"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="480" fill="url(#bg)"/>
+  <rect x="220" y="60" width="360" height="360" rx="12" fill="url(#board)"/>
+  <g stroke="#1a1a1a" stroke-width="2" opacity="0.45">
+    <path d="M280 60v360M340 60v360M400 60v360M460 60v360M520 60v360"/>
+    <path d="M220 120h360M220 180h360M220 240h360M220 300h360M220 360h360"/>
+  </g>
+  <g fill="none" stroke-width="10" stroke-linecap="round">
+    <path d="M250 90l40 40M290 90l-40 40" stroke="#c62828"/>
+    <circle cx="490" cy="390" r="22" stroke="#1565c0"/>
+    <path d="M370 210l40 40M410 210l-40 40" stroke="#c62828"/>
+    <circle cx="310" cy="270" r="22" stroke="#1565c0"/>
+  </g>
+  <text x="400" y="450" text-anchor="middle" fill="#c5a059" font-family="system-ui,sans-serif" font-size="28" font-weight="600">Caro 15×15</text>
+</svg>

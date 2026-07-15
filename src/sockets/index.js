@@ -1,28 +1,15 @@
 'use strict';
 
-const { verifyAccessToken } = require('../auth/keycloakVerify');
+const { createSocketAuthMiddleware } = require('./authMiddleware');
 const { attachTienlenSockets } = require('../modules/tienlen/sockets');
+const { attachCaroSockets } = require('../modules/caro/sockets');
 
 function attachSockets(io) {
-  io.use(async (socket, next) => {
-    try {
-      const token =
-        socket.handshake.auth?.token ||
-        (socket.handshake.headers.authorization || '').replace(/^Bearer\s+/i, '');
-      const verified = await verifyAccessToken(token);
-      if (!verified.ok) {
-        return next(new Error(verified.message || 'Unauthorized'));
-      }
-      socket.data.player = verified.player;
-      socket.data.token = token;
-      return next();
-    } catch (e) {
-      return next(new Error('Unauthorized'));
-    }
-  });
+  io.use(createSocketAuthMiddleware());
 
   const tienlen = attachTienlenSockets(io);
-  return { tienlen };
+  const caro = attachCaroSockets(io);
+  return { tienlen, caro };
 }
 
 module.exports = { attachSockets };

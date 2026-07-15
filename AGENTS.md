@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository. Read this file bef
 
 ## Project
 
-**VP Play** is a small internal LAN entertainment portal: Express portal (Module catalog + app surfaces) + Socket.IO realtime + mini-apps under `public/modules/` (first: **Tiến Lên Miền Nam** / PixiJS). Multiplayer scale for Tiến Lên: **3 fixed rooms**, **max 4 players per room**, **2–4 humans** (no bots).
+**VP Play** is a small internal LAN entertainment portal: Express portal (Module catalog + app surfaces) + Socket.IO realtime + mini-apps under `public/modules/` (**Tiến Lên Miền Nam**, **Caro** / PixiJS). Multiplayer: **3 fixed rooms** per Module; Tiến Lên **max 4** seats (2–4 humans); Caro **max 2** seats. Caro uses Socket.IO namespace `/caro` and `match:*` events (ADR 0012); no bots.
 
 Product research lives in `spec/` (`codebase_init.md`, `logic_game.md`). Runtime code is not there. Design system: `DESIGN.md`.
 
@@ -20,7 +20,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 | Client portal | Alpine.js | Catalog, app surface, ranking |
 | Auth | Keycloak-js (browser) + JWT verify (server) | Id: `KEYCLOAK_ID_CLAIM` (default `pccuid`); display: `KEYCLOAK_DISPLAY_NAME_CLAIM` (default `preferred_username`) |
 | Realtime | Socket.IO | Room/hand events; auth on handshake |
-| Game client | PixiJS v8 + GSAP 3 + Howler | `public/modules/tienlen/` (local `js/libs/`, letterbox 1920×1080); loaded in **iframe** |
+| Game client | PixiJS v8 + GSAP 3 + Howler | `public/modules/<id>/` (local `js/libs/`, letterbox 1920×1080); loaded in **iframe** |
 | DB | SQLite via `better-sqlite3` | WAL; file under `database/` |
 | Config | `dotenv` | `.env.development` / `.env.production` via `VP_ENV`; see `.env.*.example` |
 | Portal CSS | Tailwind CSS **v3.4** (CLI build) | Source `src/css/portal.css` → built `public/css/portal.css`; offline fonts under `public/fonts/` (see ADR 0007) |
@@ -34,8 +34,9 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 - `src/modules/<id>/` — **server side of a multiplayer Module** (namespaced by catalog id)
   - `src/modules/tienlen/domain/` — pure card/combo/rules/deal/scoring (no I/O)
   - `src/modules/tienlen/rooms/roomTable.js` — in-memory rooms/seats/hand phase
-  - `src/modules/tienlen/sockets.js` — Module Socket.IO adapter (`room:*` / `hand:*`)
-  - `src/modules/tienlen/index.js` — barrel re-export for the Module server package
+  - `src/modules/tienlen/sockets.js` — Module Socket.IO adapter (`room:*` / `hand:*`, default namespace)
+  - `src/modules/caro/` — board Match domain + roomTable (2 seats) + `sockets.js` on namespace `/caro` (`room:*` / `match:*`)
+  - `src/modules/<id>/index.js` — barrel re-export for the Module server package
 - `src/sockets/` — portal Socket.IO hub: JWT auth middleware + attach per-Module adapters
 - `src/auth/`, `src/services/`, `src/controllers/` — Keycloak verify, user sync, ranks
 - `src/views/` — EJS portal templates (`/` catalog, `/apps/:id` app surface e.g. `app_tienlen`, `/ranking`)
@@ -85,7 +86,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 - Socket event names: `room:*` and `hand:*`; keep payloads small.
 - Errors to client: structured `{ code, message }` on `hand:error` / join rejects; do not leak stack traces.
 - SQLite access only via config/services — no ad-hoc DB in socket files.
-- UI: keep portal and game separated (EJS/Alpine vs Pixi canvas Module); shared knowledge is card id encoding and socket contract only. Tiến Lên client: full-window Pixi canvas + virtual 1920×1080 stage container (uniform scale, center letterbox, black bars — ADR 0010); vendors Pixi/GSAP/Howler under `public/modules/tienlen/js/libs/` (no CDN); Socket.IO client still loads from server path (ADR 0008). Opponent card counts = card-back stacks (not “N lá” text). Portal CSS is Tailwind v3.4 utilities + tokens in `tailwind.config.js` / `DESIGN.md` (ADR 0007); run `npm run build:css` after class changes.
+- UI: keep portal and game separated (EJS/Alpine vs Pixi canvas Module); shared knowledge is card id encoding and socket contract only. Multiplayer clients: full-window Pixi canvas + virtual 1920×1080 stage container (uniform scale, center letterbox, black bars — ADR 0010); vendors Pixi/GSAP/Howler under `public/modules/<id>/js/libs/` (no CDN); Socket.IO client still loads from server path (ADR 0008). Tiến Lên: opponent card counts = card-back stacks (not “N lá” text). Caro client (`public/modules/caro/js/`): split modules — `constants.js`, `letterbox.js`, `boardView.js`, `headerView.js`, `hudView.js`, `socketClient.js`, `sounds.js`, `game.js` (orchestrator); board cell size + mark sprites scale with `CELL`; turn highlight = animated ring on active player name; connects namespace `/caro` (`room:*` / `match:*`, ADR 0012). Portal CSS is Tailwind v3.4 utilities + tokens in `tailwind.config.js` / `DESIGN.md` (ADR 0007); run `npm run build:css` after class changes.
 - New mini-app: add `public/modules/<id>/` + `icon.png` + one entry in `src/modules/catalog.js` (`status: 'live'` for playable; placeholders allowed for catalog mock only). Multiplayer Module also gets `src/modules/<id>/{domain,rooms,sockets.js}` and is attached from `src/sockets/index.js`.
 
 ## Testing expectations
