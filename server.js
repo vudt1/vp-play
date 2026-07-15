@@ -5,7 +5,7 @@ const http = require('http');
 const express = require('express');
 const { Server } = require('socket.io');
 const { env, withPublicPath, socketPath } = require('./src/config/env');
-const { getDb } = require('./src/config/db');
+const { getDb, checkpointDb, closeDb } = require('./src/config/db');
 const { syncFromRequest } = require('./src/auth/syncController');
 const { listRanks } = require('./src/controllers/rankController');
 const { getTopBoard } = require('./src/services/rankService');
@@ -82,6 +82,11 @@ app.get('/health', (_req, res) => {
 
 attachSockets(io);
 
+// Keep play.db roughly in sync so a force-kill leaves little (or no) unmerged WAL.
+const WAL_CHECKPOINT_MS = 15_000;
+const walCheckpointTimer = setInterval(checkpointDb, WAL_CHECKPOINT_MS);
+walCheckpointTimer.unref();
+
 server.listen(env.port, () => {
   const base = env.appPrefix || '';
   console.log(`VP Play (${env.vpEnv}) listening on http://localhost:${env.port}${base || ''}`);
@@ -89,3 +94,22 @@ server.listen(env.port, () => {
     console.log(`Public path APP_PREFIX=${env.appPrefix} (Socket.IO client path ${socketPath(env.appPrefix)})`);
   }
 });
+
+let shuttingDown = false;
+function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  clearInterval(walCheckpointTimer);
+  console.log(`${signal}: shutting down…`);
+  server.close(() => {
+    closeDb();
+    process.exit(0);
+  });
+  setTimeout(() => {
+    closeDb();
+    process.exit(1);
+  }, 5000).unref();
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

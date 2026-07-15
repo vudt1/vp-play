@@ -13,6 +13,12 @@ function getDb() {
   fs.mkdirSync(dir, { recursive: true });
   db = new Database(env.databasePath);
   db.pragma('journal_mode = WAL');
+  // Merge leftover WAL from a previous hard kill before serving traffic.
+  try {
+    db.pragma('wal_checkpoint(TRUNCATE)');
+  } catch (_) {
+    /* best-effort */
+  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       pccuid TEXT PRIMARY KEY,
@@ -24,11 +30,20 @@ function getDb() {
   return db;
 }
 
-function closeDb() {
-  if (db) {
-    db.close();
-    db = null;
+function checkpointDb() {
+  if (!db) return;
+  try {
+    db.pragma('wal_checkpoint(TRUNCATE)');
+  } catch (_) {
+    /* best-effort */
   }
 }
 
-module.exports = { getDb, closeDb };
+function closeDb() {
+  if (!db) return;
+  checkpointDb();
+  db.close();
+  db = null;
+}
+
+module.exports = { getDb, checkpointDb, closeDb };
