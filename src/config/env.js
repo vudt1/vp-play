@@ -79,6 +79,8 @@ const env = {
   turnTimeoutMs: Number(process.env.TURN_TIMEOUT_MS || 30_000),
   dealGraceMs: Number(process.env.DEAL_GRACE_MS || 8_000),
   reconnectMs: Number(process.env.RECONNECT_MS || 60_000),
+  drawMs: Number(process.env.DRAW_MS || 10_000),
+  kinhCooldownMs: Number(process.env.KINH_COOLDOWN_MS || 30_000),
   authDevBypass,
   appPrefix,
 };

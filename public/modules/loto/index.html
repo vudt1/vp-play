@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lô tô · VP Play</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000000;
+      color: #e7ecf3;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    #game-root {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #000000;
+    }
+    #game-root canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <script>
+    (function () {
+      function sanitizeBase(raw) {
+        if (raw == null || raw === '') return '';
+        var s = String(raw).trim();
+        if (!s) return '';
+        if (!/^\/[A-Za-z0-9/_-]*$/.test(s)) return '';
+        if (s.indexOf('//') !== -1) return '';
+        return s.replace(/\/+$/, '');
+      }
+      var fromQuery = sanitizeBase(new URLSearchParams(window.location.search).get('base'));
+      var fromParent = '';
+      try {
+        if (window.parent && window.parent !== window && window.parent.VP_BASE != null) {
+          fromParent = sanitizeBase(window.parent.VP_BASE);
+        }
+      } catch (_) {}
+      window.VP_BASE = fromQuery || fromParent || '';
+    })();
+  </script>
+</head>
+<body>
+  <div id="game-root"></div>
+  <script src="js/libs/pixi.min.js"></script>
+  <script src="js/libs/gsap.min.js"></script>
+  <script src="js/libs/howler.min.js"></script>
+  <script>
+    (function () {
+      var base = window.VP_BASE || '';
+      function loadScript(src, onload) {
+        var s = document.createElement('script');
+        s.src = src;
+        if (onload) s.onload = onload;
+        document.body.appendChild(s);
+      }
+      var chain = [
+        'js/constants.js',
+        'js/sounds.js',
+        'js/letterbox.js',
+        'js/boardView.js',
+        'js/hudView.js',
+        'js/socketClient.js',
+        'js/game.js',
+      ];
+      function next(i) {
+        if (i >= chain.length) return;
+        loadScript(chain[i], function () { next(i + 1); });
+      }
+      loadScript(base + '/socket.io/socket.io.js', function () {
+        next(0);
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -194,6 +194,8 @@ function portalApp() {
       this.socket.on('hand:aborted', refreshList);
       this.socket.on('match:finished', refreshList);
       this.socket.on('match:aborted', refreshList);
+      this.socket.on('round:over', refreshList);
+      this.socket.on('round:aborted', refreshList);
       if (this.socket.connected) this.socket.emit('room:list');
     },
 

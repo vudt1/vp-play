@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository. Read this file bef
 
 ## Project
 
-**VP Play** is a small internal LAN entertainment portal: Express portal (Module catalog + app surfaces) + Socket.IO realtime + mini-apps under `public/modules/` (**Tiến Lên Miền Nam**, **Caro** / PixiJS). Multiplayer: **3 fixed rooms** per Module; Tiến Lên **max 4** seats (2–4 humans); Caro **max 2** seats. Caro uses Socket.IO namespace `/caro` and `match:*` events (ADR 0012); no bots.
+**VP Play** is a small internal LAN entertainment portal: Express portal (Module catalog + app surfaces) + Socket.IO realtime + mini-apps under `public/modules/` (**Tiến Lên Miền Nam**, **Caro**, **Lô tô** / PixiJS). Multiplayer: **3 fixed rooms** per Module by default; Lô tô uses **2 rooms** × **max 20** seats (ADR 0013). Tiến Lên **max 4** seats (2–4 humans); Caro **max 2** seats. Caro uses Socket.IO namespace `/caro` and `match:*` (ADR 0012); Lô tô uses `/loto` and `round:*` (ADR 0013); no bots.
 
 Product research lives in `spec/` (`codebase_init.md`, `logic_game.md`). Runtime code is not there. Design system: `DESIGN.md`.
 
@@ -12,18 +12,18 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 
 ## Tech stack
 
-| Layer | Choice | Notes |
-| --- | --- | --- |
-| Runtime | Node.js | Single process |
-| HTTP | Express | REST + static + EJS |
-| Views | EJS | Portal SSR |
-| Client portal | Alpine.js | Catalog, app surface, ranking |
-| Auth | Keycloak-js (browser) + JWT verify (server) | Id: `KEYCLOAK_ID_CLAIM` (default `pccuid`); display: `KEYCLOAK_DISPLAY_NAME_CLAIM` (default `preferred_username`) |
-| Realtime | Socket.IO | Room/hand events; auth on handshake |
-| Game client | PixiJS v8 + GSAP 3 + Howler | `public/modules/<id>/` (local `js/libs/`, letterbox 1920×1080); loaded in **iframe** |
-| DB | SQLite via `better-sqlite3` | WAL; file under `database/` |
-| Config | `dotenv` | `.env.development` / `.env.production` via `VP_ENV`; see `.env.*.example` |
-| Portal CSS | Tailwind CSS **v3.4** (CLI build) | Source `src/css/portal.css` → built `public/css/portal.css`; offline fonts under `public/fonts/` (see ADR 0007) |
+| Layer         | Choice                                      | Notes                                                                                                             |
+| ------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Runtime       | Node.js                                     | Single process                                                                                                    |
+| HTTP          | Express                                     | REST + static + EJS                                                                                               |
+| Views         | EJS                                         | Portal SSR                                                                                                        |
+| Client portal | Alpine.js                                   | Catalog, app surface, ranking                                                                                     |
+| Auth          | Keycloak-js (browser) + JWT verify (server) | Id: `KEYCLOAK_ID_CLAIM` (default `pccuid`); display: `KEYCLOAK_DISPLAY_NAME_CLAIM` (default `preferred_username`) |
+| Realtime      | Socket.IO                                   | Room/hand events; auth on handshake                                                                               |
+| Game client   | PixiJS v8 + GSAP 3 + Howler                 | `public/modules/<id>/` (local `js/libs/`, letterbox 1920×1080); loaded in **iframe**                              |
+| DB            | SQLite via `better-sqlite3`                 | WAL; file under `database/`                                                                                       |
+| Config        | `dotenv`                                    | `.env.development` / `.env.production` via `VP_ENV`; see `.env.*.example`                                         |
+| Portal CSS    | Tailwind CSS **v3.4** (CLI build)           | Source `src/css/portal.css` → built `public/css/portal.css`; offline fonts under `public/fonts/` (see ADR 0007)   |
 
 **Do not add** without an explicit human decision: ORM, Redis, formal FSM library, GraphQL, monorepo tooling, second mini-game framework, CDN Tailwind, or extra PostCSS plugins beyond the official Tailwind CLI.
 
@@ -36,6 +36,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
   - `src/modules/tienlen/rooms/roomTable.js` — in-memory rooms/seats/hand phase
   - `src/modules/tienlen/sockets.js` — Module Socket.IO adapter (`room:*` / `hand:*`, default namespace)
   - `src/modules/caro/` — board Match domain + roomTable (2 seats) + `sockets.js` on namespace `/caro` (`room:*` / `match:*`)
+  - `src/modules/loto/` — Lô tô Round domain + roomTable (2 rooms, max 20) + dataset + `sockets.js` on namespace `/loto` (`room:*` / `round:*`, ADR 0013)
   - `src/modules/<id>/index.js` — barrel re-export for the Module server package
 - `src/sockets/` — portal Socket.IO hub: JWT auth middleware + attach per-Module adapters
 - `src/auth/`, `src/services/`, `src/controllers/` — Keycloak verify, user sync, ranks
@@ -70,7 +71,7 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 6. **Explicit non-goals:** tới trắng, đền bài, thối 3 bích, cóng multipliers, AI autoplay, out-of-turn chặt, ELO, spectators, mid-hand DB persistence.
 7. **Auth path:** Portal owns Keycloak. With `AUTH_DEV_BYPASS=0`, all portal pages (`/`, `/apps/:id`, `/ranking`) use `login-required` and must succeed `POST /api/auth/sync` before useful UI; access token may be cached in `localStorage` (`vp_access_token`). Display name in header `#auth-slot`. Game iframe receives `{ type: 'vp-auth', token, profile }` via **postMessage** (same origin). Socket uses token; server verifies JWKS. **Do not** init Keycloak inside the iframe.
 8. **Portal IA:** home `/` = Module catalog only; multiplayer Room lobby + iframe live on app surface `/apps/:id`. Leaving the app surface (Back / navigate away) must emit `room:leave` when seated. Ranking `/ranking` = global top 10 by raw `totalPoints` (all Modules share one sum via `applyPoints`).
-9. **Rooms:** exactly 3 fixed slots (Tiến Lên); Host = first joiner, migrates on leave; host starts at 2–4 players; after hand → waiting + host restarts.
+9. **Rooms:** exactly 2 or 3 fixed slots (each module); Host = first joiner, migrates on leave; host starts when Module min seats met (Tiến Lên 2–4, Caro 2, Lô tô ≥2 with all tickets selected); after Hand/Match/Round → waiting + host restarts (Lô tô may keep Tickets until re-prepare).
 10. **Disconnect / turn timeout:** hold seat ~`RECONNECT_MS` (default 60s). Turn timeout never auto-plays cards: non–free-lead → auto-pass (`ringPassed`); free-lead → free-lead skip (next active keeps free lead; opening must-include only for original opener). Mid-hand leave with seats &lt; 2 → Hand abort (draw, no points), emit `hand:aborted`, phase waiting/idle. Default `TURN_TIMEOUT_MS` 30s. First turn after deal pads **Deal grace** (`DEAL_GRACE_MS`, default 8s) onto `turnDeadline` only; client hides timer while deal/play animating.
 
 11. **Card ids:** `id = rank * 4 + suit`, rank 0=3 … 12=2, suit 0=♠ 1=♣ 2=♦ 3=♥; **3♠ = 0** (see `spec/logic_game.md`).

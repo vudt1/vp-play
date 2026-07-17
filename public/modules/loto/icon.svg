@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect x="8" y="10" width="48" height="44" rx="6" fill="#FEF9E7" stroke="#E74C3C" stroke-width="3"/>
+  <rect x="14" y="18" width="10" height="8" rx="1.5" fill="#F4D03F"/>
+  <rect x="27" y="18" width="10" height="8" rx="1.5" fill="#fff" stroke="#ccc"/>
+  <rect x="40" y="18" width="10" height="8" rx="1.5" fill="#fff" stroke="#ccc"/>
+  <rect x="14" y="30" width="10" height="8" rx="1.5" fill="#fff" stroke="#ccc"/>
+  <rect x="27" y="30" width="10" height="8" rx="1.5" fill="#E74C3C"/>
+  <rect x="40" y="30" width="10" height="8" rx="1.5" fill="#fff" stroke="#ccc"/>
+  <rect x="14" y="42" width="10" height="8" rx="1.5" fill="#fff" stroke="#ccc"/>
+  <rect x="27" y="42" width="10" height="8" rx="1.5" fill="#F4D03F"/>
+  <rect x="40" y="42" width="10" height="8" rx="1.5" fill="#fff" stroke="#ccc"/>
+  <text x="32" y="58" text-anchor="middle" font-size="7" fill="#E74C3C" font-family="Segoe UI,sans-serif" font-weight="700">LÔ TÔ</text>
+</svg>

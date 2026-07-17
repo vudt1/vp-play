@@ -83,3 +83,19 @@ _Avoid_: Placement, ELO
 **totalPoints**:
 Điểm cộng dồn toàn portal (mọi Module ghi delta vào cùng tổng); dùng cho bảng xếp hạng global top 10.
 _Avoid_: ELO, chips, money
+
+**Round**:
+Một ván Lô tô từ chuẩn bị vé / rao số đến khi Kinh thắng, full bag abort, hoặc Round abort; khác Hand (bài) và Match (board).
+_Avoid_: Hand, Match, game, session (as the domain name for Lô tô)
+
+**Ticket**:
+Một tờ vé Lô tô (ticketId, theme, allNumbers, matrices 3×3×9); mỗi Player trong Round giữ đúng một Ticket độc nhất trong pool.
+_Avoid_: Card, board, sheet (as domain name)
+
+**Ticket pool**:
+Tập vé (MVP: 40) bốc ngẫu nhiên từ dataset cho một Round; Player chọn ticketId không trùng.
+_Avoid_: Deck, inventory
+
+**Kinh**:
+Tuyên bố thắng Lô tô: ít nhất một hàng ngang 5 số trên Ticket đã nằm hết trong drawnNumbers (server authority; đánh dấu ô là client-only).
+_Avoid_: Bingo, win claim, check (as domain name)
