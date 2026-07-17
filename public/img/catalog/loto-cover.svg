@@ -1,25 +1,363 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480" preserveAspectRatio="xMidYMid slice">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480" preserveAspectRatio="xMidYMid slice" class="w-full h-full">
+  <!-- DEFS -->
   <defs>
-    <radialGradient id="bg" cx="50%" cy="70%" r="75%">
-      <stop offset="0%" stop-color="#1a3a4a"/>
-      <stop offset="100%" stop-color="#050a0e"/>
+    <!-- Background Radial Gradient (Festive Red Felt/Velvet vibe) -->
+    <radialGradient id="bg-glow" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#b30e10" />
+      <stop offset="60%" stop-color="#4a0102" />
+      <stop offset="100%" stop-color="#1c0001" />
     </radialGradient>
-    <linearGradient id="board" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fef9e7"/>
-      <stop offset="100%" stop-color="#e8d5a3"/>
+
+    <!-- Center Spotlight Aura -->
+    <radialGradient id="spotlight" cx="50%" cy="55%" r="45%">
+      <stop offset="0%" stop-color="#ffdf7a" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#b30e10" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Golden Frame Accent Gradient -->
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff2cc" />
+      <stop offset="30%" stop-color="#ffd055" />
+      <stop offset="70%" stop-color="#d39e00" />
+      <stop offset="100%" stop-color="#805000" />
     </linearGradient>
+
+    <!-- Red Silk Pouch Gradient -->
+    <linearGradient id="red-pouch-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff4747" />
+      <stop offset="60%" stop-color="#d62222" />
+      <stop offset="100%" stop-color="#8c0707" />
+    </linearGradient>
+
+    <!-- Wood Textures for Loto Cylinders -->
+    <radialGradient id="wood-grad" cx="45%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#fcf3cf" />
+      <stop offset="60%" stop-color="#f5dc8c" />
+      <stop offset="100%" stop-color="#c8963e" />
+    </radialGradient>
+
+    <!-- Drop Shadow Filter for Floating Elements -->
+    <filter id="card-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+    <filter id="pouch-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="15" stdDeviation="12" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <!-- Traditional Apricot Flower (Hoa Mai Vàng) -->
+    <g id="apricot-flower">
+      <g fill="#ffcf2d" stroke="#d35400" stroke-width="0.8">
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" />
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" transform="rotate(72)" />
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" transform="rotate(144)" />
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" transform="rotate(216)" />
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" transform="rotate(288)" />
+      </g>
+      <!-- Pistil (Nhị hoa) -->
+      <g stroke="#e74c3c" stroke-width="1.2">
+        <line x1="0" y1="0" x2="0" y2="-12" />
+        <circle cx="0" cy="-12" r="1.5" fill="#e74c3c" />
+        <line x1="0" y1="0" x2="11.4" y2="-3.7" transform="rotate(72)" />
+        <circle cx="11.4" cy="-3.7" r="1.5" fill="#e74c3c" transform="rotate(72)" />
+        <line x1="0" y1="0" x2="11.4" y2="-3.7" transform="rotate(144)" />
+        <circle cx="11.4" cy="-3.7" r="1.5" fill="#e74c3c" transform="rotate(144)" />
+        <line x1="0" y1="0" x2="11.4" y2="-3.7" transform="rotate(216)" />
+        <circle cx="11.4" cy="-3.7" r="1.5" fill="#e74c3c" transform="rotate(216)" />
+        <line x1="0" y1="0" x2="11.4" y2="-3.7" transform="rotate(288)" />
+        <circle cx="11.4" cy="-3.7" r="1.5" fill="#e74c3c" transform="rotate(288)" />
+      </g>
+      <circle cx="0" cy="0" r="4.5" fill="#fcf3cf" stroke="#d35400" stroke-width="0.5"/>
+    </g>
+
+    <!-- Traditional Peach Flower (Hoa Đào Hồng) -->
+    <g id="peach-flower">
+      <g fill="#ff7675" stroke="#c0392b" stroke-width="0.8">
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" />
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" transform="rotate(72)" />
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" transform="rotate(144)" />
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" transform="rotate(216)" />
+        <path d="M 0 0 C -12 -15, -8 -32, 0 -32 C 8 -32, 12 -15, 0 0" transform="rotate(288)" />
+      </g>
+      <!-- Pistil (Nhị hoa) -->
+      <g stroke="#ffeaa7" stroke-width="1.2">
+        <line x1="0" y1="0" x2="0" y2="-12" />
+        <circle cx="0" cy="-12" r="1.5" fill="#ffeaa7" />
+        <line x1="0" y1="0" x2="11.4" y2="-3.7" transform="rotate(72)" />
+        <circle cx="11.4" cy="-3.7" r="1.5" fill="#ffeaa7" transform="rotate(72)" />
+        <line x1="0" y1="0" x2="11.4" y2="-3.7" transform="rotate(144)" />
+        <circle cx="11.4" cy="-3.7" r="1.5" fill="#ffeaa7" transform="rotate(144)" />
+        <line x1="0" y1="0" x2="11.4" y2="-3.7" transform="rotate(216)" />
+        <circle cx="11.4" cy="-3.7" r="1.5" fill="#ffeaa7" transform="rotate(216)" />
+        <line x1="0" y1="0" x2="11.4" y2="-3.7" transform="rotate(288)" />
+        <circle cx="11.4" cy="-3.7" r="1.5" fill="#ffeaa7" transform="rotate(288)" />
+      </g>
+      <circle cx="0" cy="0" r="4.5" fill="#fff" stroke="#c0392b" stroke-width="0.5" opacity="0.9" />
+    </g>
+
+    <!-- Traditional Gold Coin (Đồng Tiền Xu Cổ) -->
+    <g id="gold-coin">
+      <circle cx="0" cy="0" r="20" fill="url(#gold-grad)" stroke="#b88d40" stroke-width="1.2"/>
+      <circle cx="0" cy="0" r="14" fill="none" stroke="#ffffff" stroke-width="0.6" stroke-opacity="0.4"/>
+      <rect x="-6" y="-6" width="12" height="12" rx="1" fill="#4a0102" stroke="#b88d40" stroke-width="1.2"/>
+    </g>
+
+    <!-- Checked Loto Stamp/Token (Nút đỏ đánh dấu) -->
+    <g id="loto-token">
+      <circle cx="0" cy="0" r="14" fill="#d63031" fill-opacity="0.8" stroke="#ff7675" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="9" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.4"/>
+    </g>
+
+    <!-- Wooden Loto Cylinder (Cờ Lô Tô) Base -->
+    <g id="loto-token-wood">
+      <circle cx="0" cy="0" r="24" fill="url(#wood-grad)" stroke="#8e601c" stroke-width="1.5" />
+      <circle cx="0" cy="0" r="18" fill="none" stroke="#d63031" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.8" />
+      <circle cx="0" cy="0" r="21" fill="none" stroke="#8e601c" stroke-width="0.8" opacity="0.4" />
+    </g>
+
+    <!-- Specific Cylinders with Numbers -->
+    <g id="token-39">
+      <use href="#loto-token-wood" />
+      <text x="0" y="8" text-anchor="middle" font-family="'Times New Roman', Georgia, serif" font-size="22" font-weight="bold" fill="#b30e10">39</text>
+    </g>
+    <g id="token-79">
+      <use href="#loto-token-wood" />
+      <text x="0" y="8" text-anchor="middle" font-family="'Times New Roman', Georgia, serif" font-size="22" font-weight="bold" fill="#b30e10">79</text>
+    </g>
+    <g id="token-86">
+      <use href="#loto-token-wood" />
+      <text x="0" y="8" text-anchor="middle" font-family="'Times New Roman', Georgia, serif" font-size="22" font-weight="bold" fill="#b30e10">86</text>
+    </g>
+    <g id="token-68">
+      <use href="#loto-token-wood" />
+      <text x="0" y="8" text-anchor="middle" font-family="'Times New Roman', Georgia, serif" font-size="22" font-weight="bold" fill="#b30e10">68</text>
+    </g>
   </defs>
-  <rect width="800" height="480" fill="url(#bg)"/>
-  <rect x="220" y="60" width="360" height="360" rx="12" fill="url(#board)"/>
-  <g stroke="#1a1a1a" stroke-width="2" opacity="0.45">
-    <path d="M280 60v360M340 60v360M400 60v360M460 60v360M520 60v360"/>
-    <path d="M220 120h360M220 180h360M220 240h360M220 300h360M220 360h360"/>
+
+  <style>
+    /* CSS transitions and states */
+    .hover-ticket-1, .hover-ticket-2, .hover-pouch {
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* Set base transforms */
+    .hover-ticket-1 {
+      transform: translate(160px, 175px) rotate(-15deg);
+      transform-origin: center;
+    }
+    .hover-ticket-2 {
+      transform: translate(320px, 195px) rotate(8deg);
+      transform-origin: center;
+    }
+    .hover-pouch {
+      transform: translate(520px, 320px);
+      transform-origin: center;
+    }
+
+    /* Triggers when the parent container (.group) is hovered */
+    svg:hover .hover-ticket-1, .group:hover .hover-ticket-1 {
+      transform: translate(130px, 160px) rotate(-22deg) scale(1.04);
+    }
+    svg:hover .hover-ticket-2, .group:hover .hover-ticket-2 {
+      transform: translate(350px, 185px) rotate(16deg) scale(1.04);
+    }
+    svg:hover .hover-pouch, .group:hover .hover-pouch {
+      transform: translate(525px, 310px) rotate(-4deg) scale(1.03);
+    }
+
+    /* Keyframes for subtle floating items */
+    @keyframes float-c1 {
+      0%, 100% { transform: translateY(0px) rotate(15deg) scale(0.9); }
+      50% { transform: translateY(-6px) rotate(19deg) scale(0.91); }
+    }
+    @keyframes float-c2 {
+      0%, 100% { transform: translateY(0px) rotate(-25deg) scale(0.85); }
+      50% { transform: translateY(-8px) rotate(-21deg) scale(0.87); }
+    }
+    @keyframes float-f1 {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-5px) rotate(10deg); }
+    }
+    @keyframes float-f2 {
+      0%, 100% { transform: translateY(0px) rotate(20deg) scale(0.8); }
+      50% { transform: translateY(-4px) rotate(25deg) scale(0.8); }
+    }
+    
+    .float-coin-1 { animation: float-c1 4s ease-in-out infinite; transform-origin: center; }
+    .float-coin-2 { animation: float-c2 4.5s ease-in-out infinite; transform-origin: center; }
+    .float-flower-1 { animation: float-f1 5s ease-in-out infinite; transform-origin: center; }
+    .float-flower-2 { animation: float-f2 6s ease-in-out infinite; transform-origin: center; }
+  </style>
+
+  <!-- BACKGROUND -->
+  <rect width="800" height="480" fill="url(#bg-glow)"/>
+  
+  <!-- SPOTLIGHT GLOW -->
+  <ellipse cx="400" cy="260" rx="360" ry="180" fill="url(#spotlight)" />
+
+  <!-- GOLDEN BORDER FRAME -->
+  <rect x="20" y="20" width="760" height="440" rx="12" fill="none" stroke="url(#gold-grad)" stroke-width="2" stroke-opacity="0.5"/>
+  <rect x="26" y="26" width="748" height="428" rx="8" fill="none" stroke="url(#gold-grad)" stroke-width="0.8" stroke-opacity="0.25"/>
+  
+  <!-- CORNER ACCENTS -->
+  <g stroke="url(#gold-grad)" stroke-width="2.2" fill="none" stroke-opacity="0.75" stroke-linecap="round">
+    <!-- Top-Left -->
+    <path d="M 20 50 L 20 20 L 50 20" />
+    <path d="M 25 38 A 12 12 0 0 1 38 25" />
+    <!-- Top-Right -->
+    <path d="M 780 50 L 780 20 L 750 20" />
+    <path d="M 775 38 A 12 12 0 0 0 762 25" />
+    <!-- Bottom-Left -->
+    <path d="M 20 430 L 20 460 L 50 460" />
+    <path d="M 25 442 A 12 12 0 0 0 38 455" />
+    <!-- Bottom-Right -->
+    <path d="M 780 430 L 780 460 L 750 460" />
+    <path d="M 775 442 A 12 12 0 0 1 762 455" />
   </g>
-  <g fill="none" stroke-width="10" stroke-linecap="round">
-    <path d="M250 90l40 40M290 90l-40 40" stroke="#c62828"/>
-    <circle cx="490" cy="390" r="22" stroke="#1565c0"/>
-    <path d="M370 210l40 40M410 210l-40 40" stroke="#c62828"/>
-    <circle cx="310" cy="270" r="22" stroke="#1565c0"/>
+
+  <!-- FLOATING SPRING FLOWERS (Back Layer) -->
+  <g class="float-flower-2" transform="translate(140, 110)">
+    <use href="#peach-flower" />
   </g>
-  <text x="400" y="450" text-anchor="middle" fill="#c5a059" font-family="system-ui,sans-serif" font-size="28" font-weight="600">Caro 15×15</text>
+  <g class="float-flower-1" transform="translate(680, 110)">
+    <use href="#apricot-flower" />
+  </g>
+
+  <!-- LOTO TICKET 1 (Cream-yellow theme #F4D03F) -->
+  <g class="hover-ticket-1">
+    <rect width="280" height="120" rx="6" fill="#fffbeb" stroke="#f4d03f" stroke-width="3" filter="url(#card-shadow)"/>
+    <g stroke="#f4d03f" stroke-width="1.2" opacity="0.45">
+      <line x1="31.1" y1="0" x2="31.1" y2="120"/>
+      <line x1="62.2" y1="0" x2="62.2" y2="120"/>
+      <line x1="93.3" y1="0" x2="93.3" y2="120"/>
+      <line x1="124.4" y1="0" x2="124.4" y2="120"/>
+      <line x1="155.5" y1="0" x2="155.5" y2="120"/>
+      <line x1="186.6" y1="0" x2="186.6" y2="120"/>
+      <line x1="217.7" y1="0" x2="217.7" y2="120"/>
+      <line x1="248.8" y1="0" x2="248.8" y2="120"/>
+      <line x1="0" y1="40" x2="280" y2="40"/>
+      <line x1="0" y1="80" x2="280" y2="80"/>
+    </g>
+    <!-- Numbers -->
+    <g font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="800" fill="#2d3436" text-anchor="middle">
+      <!-- Row 1 -->
+      <text x="15.5" y="26">05</text>
+      <text x="77.7" y="26">22</text>
+      <text x="140.0" y="26">41</text>
+      <text x="202.2" y="26">63</text>
+      <text x="264.4" y="26">80</text>
+      <!-- Row 2 -->
+      <text x="46.6" y="66">12</text>
+      <text x="108.8" y="66">34</text>
+      <text x="171.1" y="66">55</text>
+      <text x="233.3" y="66">72</text>
+      <text x="264.4" y="66">89</text>
+      <!-- Row 3 -->
+      <text x="15.5" y="106">08</text>
+      <text x="77.7" y="106">29</text>
+      <text x="140.0" y="106">48</text>
+      <text x="202.2" y="106">68</text>
+      <text x="233.3" y="106">77</text>
+    </g>
+    <!-- Active Stamped Markers -->
+    <use href="#loto-token" x="77.7" y="20"/>
+    <use href="#loto-token" x="202.2" y="100"/>
+  </g>
+
+  <!-- LOTO TICKET 2 (Red-pink theme #E74C3C) -->
+  <g class="hover-ticket-2">
+    <rect width="280" height="120" rx="6" fill="#fff5f5" stroke="#e74c3c" stroke-width="3" filter="url(#card-shadow)"/>
+    <g stroke="#e74c3c" stroke-width="1.2" opacity="0.4">
+      <line x1="31.1" y1="0" x2="31.1" y2="120"/>
+      <line x1="62.2" y1="0" x2="62.2" y2="120"/>
+      <line x1="93.3" y1="0" x2="93.3" y2="120"/>
+      <line x1="124.4" y1="0" x2="124.4" y2="120"/>
+      <line x1="155.5" y1="0" x2="155.5" y2="120"/>
+      <line x1="186.6" y1="0" x2="186.6" y2="120"/>
+      <line x1="217.7" y1="0" x2="217.7" y2="120"/>
+      <line x1="248.8" y1="0" x2="248.8" y2="120"/>
+      <line x1="0" y1="40" x2="280" y2="40"/>
+      <line x1="0" y1="80" x2="280" y2="80"/>
+    </g>
+    <!-- Numbers -->
+    <g font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="800" fill="#2d3436" text-anchor="middle">
+      <!-- Row 1 -->
+      <text x="46.6" y="26">15</text>
+      <text x="108.8" y="26">31</text>
+      <text x="171.1" y="26">50</text>
+      <text x="233.3" y="26">76</text>
+      <text x="264.4" y="26">90</text>
+      <!-- Row 2 -->
+      <text x="15.5" y="66">03</text>
+      <text x="77.7" y="66">27</text>
+      <text x="140.0" y="66">44</text>
+      <text x="202.2" y="66">61</text>
+      <text x="233.3" y="66">78</text>
+      <!-- Row 3 -->
+      <text x="46.6" y="106">19</text>
+      <text x="108.8" y="106">38</text>
+      <text x="171.1" y="106">57</text>
+      <text x="202.2" y="106">65</text>
+      <text x="264.4" y="106">82</text>
+    </g>
+    <!-- Active Stamped Markers -->
+    <use href="#loto-token" x="264.4" y="20"/>
+    <use href="#loto-token" x="77.7" y="60"/>
+    <use href="#loto-token" x="171.1" y="100"/>
+  </g>
+
+  <!-- TRADITIONAL RED DRAWSTRING BAG -->
+  <g class="hover-pouch" filter="url(#pouch-shadow)">
+    <!-- Back drawstrings dangling -->
+    <path d="M -22 -6 C -40 5, -55 25, -45 45" fill="none" stroke="url(#gold-grad)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 22 -6 C 40 5, 55 25, 55 45" fill="none" stroke="url(#gold-grad)" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="-45" cy="45" r="4.5" fill="url(#gold-grad)"/>
+    <circle cx="55" cy="45" r="4.5" fill="url(#gold-grad)"/>
+
+    <!-- Collar of bag -->
+    <path d="M -30 -10 C -36 -22, -18 -30, 0 -30 C 18 -30, 36 -22, 30 -10 C 22 -5, -22 -5, -30 -10 Z" fill="url(#red-pouch-grad)" stroke="#8c0707" stroke-width="1.2"/>
+    
+    <!-- Main Body -->
+    <path d="M -26 -10 C -50 2, -75 25, -75 65 C -75 105, -48 125, 0 125 C 48 125, 75 105, 75 65 C 75 25, 50 2, 26 -10 Z" fill="url(#red-pouch-grad)" stroke="#8c0707" stroke-width="1.2"/>
+
+    <!-- Tie cord gold band -->
+    <ellipse cx="0" cy="-10" rx="26" ry="4.5" fill="none" stroke="url(#gold-grad)" stroke-width="3.5"/>
+    <circle cx="0" cy="-10" r="6" fill="url(#gold-grad)"/>
+
+    <!-- Gold character or emblem: Stylized circular floral medallion -->
+    <circle cx="0" cy="55" r="28" fill="none" stroke="url(#gold-grad)" stroke-width="1.8" stroke-opacity="0.8"/>
+    <circle cx="0" cy="55" r="24" fill="none" stroke="url(#gold-grad)" stroke-width="0.6" stroke-opacity="0.4" stroke-dasharray="2 2"/>
+    <path d="M 0 38 C 4 46, 16 50, 0 72 C -16 50, -4 46, 0 38 Z" fill="url(#gold-grad)" opacity="0.85"/>
+    <path d="M -17 55 C -9 51, -5 39, 17 55 C -5 71, -9 59, -17 55 Z" fill="url(#gold-grad)" opacity="0.85" transform="rotate(90 0 55)"/>
+    <circle cx="0" cy="55" r="5" fill="#8c0707" stroke="url(#gold-grad)" stroke-width="1"/>
+  </g>
+
+  <!-- WOODEN TOKENS SPILLING FROM BAG -->
+  <use href="#token-39" x="410" y="380" filter="url(#card-shadow)"/>
+  <use href="#token-79" x="460" y="415" filter="url(#card-shadow)"/>
+  <use href="#token-86" x="575" y="420" filter="url(#card-shadow)"/>
+  <use href="#token-68" x="615" y="385" filter="url(#card-shadow)"/>
+
+  <!-- FLOATING GOLD COINS (Front Layer) -->
+  <g class="float-coin-1" transform="translate(300, 390)">
+    <use href="#gold-coin" />
+  </g>
+  <g class="float-coin-2" transform="translate(680, 360)">
+    <use href="#gold-coin" />
+  </g>
+
+  <!-- FLOATING SPRING FLOWERS (Front Layer) -->
+  <g class="float-flower-1" transform="translate(480, 335) scale(0.65)">
+    <use href="#apricot-flower" />
+  </g>
+  <g class="float-flower-2" transform="translate(230, 340) scale(0.7)">
+    <use href="#peach-flower" />
+  </g>
+
+  <!-- FESTIVE TYPOGRAPHY -->
+  <g filter="drop-shadow(0px 6px 10px rgba(0,0,0,0.65))">
+    <!-- Main Title LÔ TÔ -->
+    <text x="400" y="92" text-anchor="middle" font-family="'Times New Roman', Georgia, serif" font-size="56" font-weight="900" fill="url(#gold-grad)" stroke="#4a0102" stroke-width="1.8" letter-spacing="8">LÔ TÔ</text>
+    <!-- Subtitle VUI XUÂN ĐÓN TẾT -->
+    <text x="400" y="124" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#fff2cc" letter-spacing="5" opacity="0.9">VUI XUÂN ĐÓN TẾT</text>
+  </g>
 </svg>
