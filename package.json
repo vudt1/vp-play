@@ -10,7 +10,7 @@
     "dev": "node -e \"process.env.VP_ENV='development';require('./server.js')\"",
     "start": "node -e \"process.env.VP_ENV='production';require('./server.js')\"",
     "start:prod": "node -e \"process.env.VP_ENV='production';require('./server.js')\"",
-    "test": "node --test tests/modules/tienlen/domain/rules.test.js tests/modules/tienlen/rooms/roomTable.test.js tests/modules/caro/domain/caroRules.test.js tests/modules/caro/rooms/roomTable.test.js tests/config/env.test.js tests/services/rankService.test.js"
+    "test": "node --test tests/modules/tienlen/domain/rules.test.js tests/modules/tienlen/rooms/roomTable.test.js tests/modules/caro/domain/caroRules.test.js tests/modules/caro/rooms/roomTable.test.js tests/modules/loto/domain/rules.test.js tests/modules/loto/rooms/roomTable.test.js tests/config/env.test.js tests/services/rankService.test.js"
   },
   "engines": {
     "node": ">=18"
