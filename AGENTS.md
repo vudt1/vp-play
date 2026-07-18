@@ -12,18 +12,19 @@ Domain vocabulary: `CONTEXT.md`. Architectural decisions: `docs/adr/`.
 
 ## Tech stack
 
-| Layer         | Choice                                      | Notes                                                                                                             |
-| ------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Runtime       | Node.js                                     | Single process                                                                                                    |
-| HTTP          | Express                                     | REST + static + EJS                                                                                               |
-| Views         | EJS                                         | Portal SSR                                                                                                        |
-| Client portal | Alpine.js                                   | Catalog, app surface, ranking                                                                                     |
-| Auth          | Keycloak-js (browser) + JWT verify (server) | Id: `KEYCLOAK_ID_CLAIM` (default `pccuid`); display: `KEYCLOAK_DISPLAY_NAME_CLAIM` (default `preferred_username`) |
-| Realtime      | Socket.IO                                   | Room/hand events; auth on handshake                                                                               |
-| Game client   | PixiJS v8 + GSAP 3 + Howler                 | Shared library path `/public/js/libs/`, letterbox ; loaded in **iframe**                                          |
-| DB            | SQLite via `better-sqlite3`                 | WAL; file under `database/`                                                                                       |
-| Config        | `dotenv`                                    | `.env.development` / `.env.production` via `VP_ENV`; see `.env.*.example`                                         |
-| Portal CSS    | Tailwind CSS **v3.4** (CLI build)           | Source `src/css/portal.css` → built `public/css/portal.css`; offline fonts under `public/fonts/` (see ADR 0007)   |
+| Layer            | Choice                                      | Notes                                                                                                             |
+| ---------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Runtime          | Node.js                                     | Single process                                                                                                    |
+| HTTP             | Express                                     | REST + static + EJS                                                                                               |
+| Views            | EJS                                         | Portal SSR                                                                                                        |
+| Client portal    | Alpine.js                                   | Catalog, app surface, ranking                                                                                     |
+| Auth             | Keycloak-js (browser) + JWT verify (server) | Id: `KEYCLOAK_ID_CLAIM` (default `pccuid`); display: `KEYCLOAK_DISPLAY_NAME_CLAIM` (default `preferred_username`) |
+| Realtime         | Socket.IO                                   | Room/hand events; auth on handshake                                                                               |
+| Game client      | PixiJS v8 + GSAP 3 + Howler                 | Shared library path `/public/js/libs/`, letterbox ; loaded in **iframe**                                          |
+| DB               | SQLite via                                  |
+| `better-sqlite3` | WAL; file under `database/`                 |
+| Config           | `dotenv`                                    | `.env.development` / `.env.production` via `VP_ENV`; see `.env.*.example`                                         |
+| Portal CSS       | Tailwind CSS **v3.4** (CLI build)           | Source `src/css/portal.css` → built `public/css/portal.css`; offline fonts under `public/fonts/` (see ADR 0007)   |
 
 **Do not add** without an explicit human decision: ORM, Redis, formal FSM library, GraphQL, monorepo tooling, second mini-game framework, CDN Tailwind, or extra PostCSS plugins beyond the official Tailwind CLI.
 

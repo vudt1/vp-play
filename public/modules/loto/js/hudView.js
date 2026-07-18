@@ -88,26 +88,83 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
   btnClear.x = 470;
   btnClear.y = BASE_H - 180;
 
+  const PANEL_W = 280;
   const listRoot = new PIXI.Container();
-  listRoot.x = BASE_W - 280;
+  listRoot.x = BASE_W - PANEL_W - 40;
   listRoot.y = 80;
   uiLayer.addChild(listRoot);
 
   const listPanel = new PIXI.Graphics();
   listRoot.addChild(listPanel);
+
+  const listMask = new PIXI.Graphics();
+  listRoot.addChild(listMask);
+
   const listItems = new PIXI.Container();
+  listItems.mask = listMask; // Crop elements when panel height shrinks
   listRoot.addChild(listItems);
 
+  let lastSeats = [];
+  let lastHost = null;
+  let lastChecking = null;
+
+  function getMaxHeight() {
+    const h = Math.min(BASE_H - 120, 40 + (lastSeats?.length || 0) * 68);
+    return Math.max(h, 80);
+  }
+
+  const animState = { height: 0 };
+
+  function redrawPanel(height) {
+    listPanel.clear();
+    listMask.clear();
+    if (height > 0) {
+      listPanel.roundRect(0, 0, PANEL_W, height, 14);
+      listPanel.fill({ color: COLOR.panel, alpha: 0.92 });
+      listPanel.stroke({ width: 1, color: 0x5a667a });
+
+      listMask.roundRect(0, 0, PANEL_W, height, 14);
+      listMask.fill({ color: 0xffffff });
+    }
+  }
+
   let listVisible = true;
-  const btnToggle = makeButton('«', 48, 48);
+  const btnToggle = makeButton('▲', 48, 48);
   btnToggle.x = BASE_W - 70;
   btnToggle.y = 24;
   btnToggle.visible = true;
-  overlayLayer.addChild(btnToggle);
+  overlayLayer.addChild(btnToggle); // Static on overlayLayer
+
   btnToggle.on('pointertap', () => {
     listVisible = !listVisible;
-    listRoot.visible = listVisible;
-    btnToggle.setLabel(listVisible ? '«' : '»');
+    btnToggle.setLabel(listVisible ? '▲' : '▼');
+    const fullH = getMaxHeight();
+    const targetH = listVisible ? fullH : 0;
+
+    if (listVisible) {
+      listRoot.visible = true;
+    }
+
+    if (typeof gsap !== 'undefined') {
+      gsap.killTweensOf(animState);
+      gsap.to(animState, {
+        height: targetH,
+        duration: 0.35,
+        ease: 'power2.out',
+        onUpdate: () => {
+          redrawPanel(animState.height);
+        },
+        onComplete: () => {
+          if (!listVisible) {
+            listRoot.visible = false;
+          }
+        }
+      });
+    } else {
+      animState.height = targetH;
+      redrawPanel(targetH);
+      listRoot.visible = listVisible;
+    }
   });
 
   const checkingRoot = new PIXI.Container();
@@ -146,57 +203,79 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
   }
 
   function paintList(seats, hostPccuid, checkingPccuid) {
+    lastSeats = seats;
+    lastHost = hostPccuid;
+    lastChecking = checkingPccuid;
+
     listItems.removeChildren();
-    const w = 240;
-    const h = Math.min(BASE_H - 120, 40 + (seats?.length || 0) * 56);
-    listPanel.clear();
-    listPanel.roundRect(0, 0, w, Math.max(h, 80), 14);
-    listPanel.fill({ color: COLOR.panel, alpha: 0.92 });
-    listPanel.stroke({ width: 1, color: 0x5a667a });
+
+    const fullH = getMaxHeight();
+    if (typeof gsap === 'undefined' || !gsap.isTweening(animState)) {
+      animState.height = listVisible ? fullH : 0;
+    }
+    redrawPanel(animState.height);
+    listRoot.visible = listVisible || (typeof gsap !== 'undefined' && gsap.isTweening(animState));
 
     (seats || []).forEach((s, i) => {
       const row = new PIXI.Container();
-      row.y = 16 + i * 54;
+      row.y = 16 + i * 68;
       row.x = 16;
+
       const av = new PIXI.Graphics();
-      av.circle(22, 22, 22);
+      const r = 26; // Increased from 22 to 26 (size 52x52)
+      av.circle(r, r, r);
       av.fill({ color: s.pccuid === hostPccuid ? COLOR.accent : 0x3a465c });
+
       const letter = makeText((s.displayName || '?').charAt(0).toUpperCase(), {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 22,
+        fontSize: 26, // Increased from 22 to 26
         fill: COLOR.text,
         fontWeight: '700',
       });
       letter.anchor.set(0.5);
-      letter.x = 22;
-      letter.y = 22;
+      letter.x = r;
+      letter.y = r;
       row.addChild(av, letter);
+
+      const textGroup = new PIXI.Container();
+      textGroup.alpha = listVisible ? 1 : 0;
+      row._textGroup = textGroup;
+      row.addChild(textGroup);
 
       if (checkingPccuid && s.pccuid === checkingPccuid && handsTexture) {
         const hand = new PIXI.Sprite(handsTexture);
-        hand.width = 28;
-        hand.height = 28;
-        hand.x = 52;
-        hand.y = 8;
-        row.addChild(hand);
+        hand.width = 30;
+        hand.height = 30;
+        hand.x = r * 2 + 10;
+        hand.y = r - 15;
+        textGroup.addChild(hand); // Fade hand with text
       }
 
       row.eventMode = 'static';
-      const tip = makeText(s.displayName || s.pccuid, {
+      const nameText = makeText(s.displayName || s.pccuid, {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 18,
+        fontSize: 24, // Increased from 20 to 24
         fill: COLOR.text,
+        fontWeight: '600',
       });
-      tip.visible = false;
-      tip.x = 56;
-      tip.y = 30;
-      row.addChild(tip);
-      row.on('pointerover', () => {
-        tip.visible = true;
-      });
-      row.on('pointerout', () => {
-        tip.visible = false;
-      });
+      nameText.x = 80;
+
+      if (s.pccuid === hostPccuid) {
+        nameText.y = r - 26; // shifted up slightly
+
+        const hostTag = makeText('Host', {
+          fontFamily: 'Segoe UI, system-ui, sans-serif',
+          fontSize: 20, // Increased from 16 to 20
+          fill: COLOR.accent,
+          fontWeight: '700',
+        });
+        hostTag.x = 80;
+        hostTag.y = r + 2; // positioned below name
+        textGroup.addChild(nameText, hostTag);
+      } else {
+        nameText.y = r - 12; // centered
+        textGroup.addChild(nameText);
+      }
 
       if (!s.connected) row.alpha = 0.45;
       listItems.addChild(row);
