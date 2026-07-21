@@ -207,6 +207,16 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
     lastHost = hostPccuid;
     lastChecking = checkingPccuid;
 
+    if (typeof gsap !== 'undefined') {
+      listItems.children.forEach((row) => {
+        if (row._textGroup) {
+          row._textGroup.children.forEach((child) => {
+            gsap.killTweensOf(child);
+          });
+        }
+      });
+    }
+
     listItems.removeChildren();
 
     const fullH = getMaxHeight();
@@ -246,9 +256,20 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
         const hand = new PIXI.Sprite(handsTexture);
         hand.width = 30;
         hand.height = 30;
-        hand.x = r * 2 + 10;
-        hand.y = r - 15;
+        hand.anchor.set(0.5, 1.0);
+        hand.x = r * 2 + 10 + 15; // Offset for anchor center-bottom
+        hand.y = r - 15 + 30;
         textGroup.addChild(hand); // Fade hand with text
+
+        if (typeof gsap !== 'undefined') {
+          gsap.to(hand, {
+            rotation: 0.25, // Waving angle
+            duration: 0.2,
+            yoyo: true,
+            repeat: -1,
+            ease: 'sine.inOut',
+          });
+        }
       }
 
       row.eventMode = 'static';
