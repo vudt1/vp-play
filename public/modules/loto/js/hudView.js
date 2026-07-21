@@ -252,50 +252,63 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
       row._textGroup = textGroup;
       row.addChild(textGroup);
 
-      if (checkingPccuid && s.pccuid === checkingPccuid && handsTexture) {
-        const hand = new PIXI.Sprite(handsTexture);
-        hand.width = 30;
-        hand.height = 30;
-        hand.anchor.set(0.5, 1.0);
-        hand.x = r * 2 + 10 + 15; // Offset for anchor center-bottom
-        hand.y = r - 15 + 30;
-        textGroup.addChild(hand); // Fade hand with text
-
-        if (typeof gsap !== 'undefined') {
-          gsap.to(hand, {
-            rotation: 0.25, // Waving angle
-            duration: 0.2,
-            yoyo: true,
-            repeat: -1,
-            ease: 'sine.inOut',
-          });
-        }
-      }
-
       row.eventMode = 'static';
       const nameText = makeText(s.displayName || s.pccuid, {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 24, // Increased from 20 to 24
+        fontSize: 24,
         fill: COLOR.text,
         fontWeight: '600',
       });
       nameText.x = 80;
 
       if (s.pccuid === hostPccuid) {
-        nameText.y = r - 26; // shifted up slightly
+        nameText.y = r - 26;
 
         const hostTag = makeText('Host', {
           fontFamily: 'Segoe UI, system-ui, sans-serif',
-          fontSize: 20, // Increased from 16 to 20
+          fontSize: 20,
           fill: COLOR.accent,
           fontWeight: '700',
         });
         hostTag.x = 80;
-        hostTag.y = r + 2; // positioned below name
+        hostTag.y = r + 2;
         textGroup.addChild(nameText, hostTag);
       } else {
-        nameText.y = r - 12; // centered
+        nameText.y = r - 12;
         textGroup.addChild(nameText);
+      }
+
+      if (checkingPccuid && s.pccuid === checkingPccuid) {
+        // On row (not textGroup) so hands stay visible while list panel is open.
+        if (handsTexture) {
+          const hand = new PIXI.Sprite(handsTexture);
+          hand.width = 36;
+          hand.height = 36;
+          hand.anchor.set(0.5);
+          hand.x = PANEL_W - 40;
+          hand.y = r;
+          row.addChild(hand);
+
+          if (typeof gsap !== 'undefined') {
+            gsap.to(hand, {
+              rotation: 0.28,
+              duration: 0.22,
+              yoyo: true,
+              repeat: -1,
+              ease: 'sine.inOut',
+            });
+          }
+        } else {
+          const handFallback = makeText('✋', {
+            fontFamily: 'Segoe UI Emoji, Segoe UI, sans-serif',
+            fontSize: 28,
+            fill: COLOR.gold,
+          });
+          handFallback.anchor.set(0.5);
+          handFallback.x = PANEL_W - 40;
+          handFallback.y = r;
+          row.addChild(handFallback);
+        }
       }
 
       if (!s.connected) row.alpha = 0.45;

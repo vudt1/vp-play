@@ -16,7 +16,39 @@
     lastDrawn: null,
     sfxOverKey: null,
     renderedTicketId: null,
+    /** Client-held Kinh flash so hands icon is visible despite sync server settle. */
+    checkingFlash: null,
+    checkingFlashTimer: null,
   };
+
+  const CHECKING_FLASH_MS = 1800;
+
+  function clearCheckingFlash() {
+    if (state.checkingFlashTimer) {
+      clearTimeout(state.checkingFlashTimer);
+      state.checkingFlashTimer = null;
+    }
+    state.checkingFlash = null;
+  }
+
+  function startCheckingFlash(pccuid) {
+    if (!pccuid) return;
+    if (state.checkingFlashTimer) clearTimeout(state.checkingFlashTimer);
+    state.checkingFlash = { pccuid, until: Date.now() + CHECKING_FLASH_MS };
+    state.checkingFlashTimer = setTimeout(() => {
+      state.checkingFlash = null;
+      state.checkingFlashTimer = null;
+      renderHud();
+    }, CHECKING_FLASH_MS);
+  }
+
+  function activeCheckingPccuid(room) {
+    const now = Date.now();
+    if (state.checkingFlash && state.checkingFlash.until > now) {
+      return state.checkingFlash.pccuid;
+    }
+    return room?.checkingPccuid || null;
+  }
 
   const app = new PIXI.Application();
   await app.init({
@@ -190,7 +222,8 @@
     const allPicked =
       (room.seats || []).length >= 2 && (room.seats || []).every((s) => s.ticketId);
 
-    hud.paintList(room.seats, room.hostPccuid, room.checkingPccuid);
+    const checkingUid = activeCheckingPccuid(room);
+    hud.paintList(room.seats, room.hostPccuid, checkingUid);
 
     hud.btnPrepare.visible = waiting && isHost();
     hud.btnPrepare.setEnabled(waiting && isHost() && (room.seats || []).length >= 2);
@@ -204,8 +237,8 @@
 
     const now = Date.now();
     const cd = me?.cooldownUntil && me.cooldownUntil > now;
-    hud.btnKinh.visible = playing || settling;
-    hud.btnKinh.setEnabled(playing && !cd && !!me?.ticketId);
+    hud.btnKinh.visible = playing || settling || !!checkingUid;
+    hud.btnKinh.setEnabled(playing && !cd && !!me?.ticketId && !checkingUid);
     if (cd) {
       const left = Math.ceil((me.cooldownUntil - now) / 1000);
       hud.btnKinh.setLabel(`Kinh (${left}s)`);
@@ -220,8 +253,8 @@
     } else if (hasPool) {
       status += ` · vé ${(state.poolIndex % room.ticketPool.length) + 1}/${room.ticketPool.length}`;
     }
-    if (settling && room.checkingPccuid) {
-      const who = (room.seats || []).find((s) => s.pccuid === room.checkingPccuid);
+    if (checkingUid) {
+      const who = (room.seats || []).find((s) => s.pccuid === checkingUid);
       hud.showChecking(who?.displayName || 'Player');
     } else {
       hud.hideChecking();
@@ -253,12 +286,13 @@
       render();
       return;
     }
-    // Lobby list is redacted (no ticketPool/myTicket); keep full room:state when already seated.
+    // Lobby list is redacted (empty ticketPool/drawnNumbers); keep full room:state when already seated.
+    // Do not trust list checkingPccuid over a local Kinh flash (server settles sync).
     if (meta?.fromList && state.room && state.room.id === room.id) {
       state.room.seats = room.seats;
       state.room.phase = room.phase;
       state.room.hostPccuid = room.hostPccuid;
-      state.room.checkingPccuid = room.checkingPccuid;
+      if (room.checkingPccuid) state.room.checkingPccuid = room.checkingPccuid;
       state.room.lastResult = room.lastResult;
       if (room.poolSize != null) state.room.poolSize = room.poolSize;
       renderHud();
@@ -270,7 +304,11 @@
       if (state.sfxOverKey !== key) {
         state.sfxOverKey = key;
         const win = room.lastResult.winnerId === me;
-        hud.showResult(win ? 'Bạn Kinh! +10' : `${room.lastResult.winnerId} thắng (+10)`);
+        const winnerName =
+          (room.seats || []).find((s) => s.pccuid === room.lastResult.winnerId)?.displayName ||
+          room.lastResult.winnerDisplayName ||
+          'Người chơi';
+        hud.showResult(win ? 'Bạn Kinh! +10' : `${winnerName} thắng (+10)`);
         if (win) {
           sfx.playVictory();
           fireworks();
@@ -300,10 +338,12 @@
       renderHud();
     },
     onChecking: (payload) => {
+      if (payload?.pccuid) startCheckingFlash(payload.pccuid);
       if (state.room) state.room.checkingPccuid = payload?.pccuid || null;
       renderHud();
     },
     onOver: (payload) => {
+      if (payload?.winnerId) startCheckingFlash(payload.winnerId);
       if (payload?.room) applyRoom(payload.room);
       else if (payload) {
         const me = state.profile?.pccuid;
@@ -316,6 +356,7 @@
       }
     },
     onAborted: (payload) => {
+      clearCheckingFlash();
       hud.showResult(`Ván hủy: ${payload?.reason || 'abort'}`);
       hud.hideChecking();
       net.requestList();
@@ -365,6 +406,9 @@
     });
   });
   hud.btnKinh.on('pointertap', () => {
+    const me = state.profile?.pccuid;
+    if (me) startCheckingFlash(me);
+    renderHud();
     net.emitKinh((res) => {
       if (res && res.ok === false) {
         showError(res.error);
@@ -381,6 +425,7 @@
     if (data.token) state.token = data.token;
     if (data.profile) state.profile = data.profile;
     if (state.token) net.connect();
+    if (state.profile) net.requestList();
     render();
   }
   window.addEventListener('message', onAuthMessage);

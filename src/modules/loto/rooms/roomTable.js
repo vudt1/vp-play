@@ -16,7 +16,7 @@ function loadDataset() {
 function createRoomTable(options = {}) {
   const onSettle = options.onSettle ?? (async () => {});
   const reconnectMs = options.reconnectMs ?? 60_000;
-  const drawMs = options.drawMs ?? 10_000;
+  const drawMs = options.drawMs ?? 8_000;
   const kinhCooldownMs = options.kinhCooldownMs ?? 30_000;
   const dataset = options.dataset ?? loadDataset();
   const rng = options.rng ?? Math.random;

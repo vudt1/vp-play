@@ -88,8 +88,9 @@ function attachLotoSockets(io) {
     socket.on('round:submit_kinh', (_payload, ack) => {
       const pccuid = socket.data.player.pccuid;
       const roomId = table.findPlayerRoom(pccuid);
+      // Include submitter: nsp.to(room) skips the sender socket.
       if (roomId != null) {
-        nsp.to(roomChannel(roomId)).emit('round:player_checking_kinh', { pccuid });
+        nsp.in(roomChannel(roomId)).emit('round:player_checking_kinh', { pccuid });
       }
       const result = table.submitKinh(pccuid);
       if (result.finished) {

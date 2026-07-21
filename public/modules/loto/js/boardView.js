@@ -97,7 +97,7 @@ Loto.createBoardView = function createBoardView(opts) {
               text: String(num),
               style: {
                 fontFamily: 'Segoe UI, system-ui, sans-serif',
-                fontSize: 28,
+                fontSize: 32,
                 fill: 0x000000,
                 fontWeight: '700',
               },

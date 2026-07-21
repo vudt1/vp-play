@@ -48,8 +48,33 @@ Loto.createSocketClient = function createSocketClient(opts) {
       auth: { token },
     });
 
+    let joinedChannelRoomId = null;
+
+    function ensureRoomChannel(list) {
+      const profile = getProfile();
+      if (!profile || !socket) return;
+      const mine = (list || []).find((r) =>
+        (r.seats || []).some((s) => s.pccuid === profile.pccuid)
+      );
+      if (!mine) {
+        joinedChannelRoomId = null;
+        return;
+      }
+      if (joinedChannelRoomId === mine.id) return;
+      joinedChannelRoomId = mine.id;
+      socket.emit('room:join', { roomId: mine.id }, (ack) => {
+        if (ack && ack.ok === false) {
+          joinedChannelRoomId = null;
+          onError?.(ack.error);
+          return;
+        }
+        if (ack?.room) onRoom?.(ack.room, { fromList: false });
+      });
+    }
+
     socket.on('connect', () => {
       onStatus?.('Đã kết nối');
+      joinedChannelRoomId = null;
       socket.emit('room:list');
     });
 
@@ -60,6 +85,7 @@ Loto.createSocketClient = function createSocketClient(opts) {
     socket.on('room:list', (list) => {
       const profile = getProfile();
       if (!profile) return;
+      ensureRoomChannel(list);
       const mine = (list || []).find((r) =>
         (r.seats || []).some((s) => s.pccuid === profile.pccuid)
       );
