@@ -23,6 +23,10 @@ Loto.CONST = {
     gold: 0xf4d03f,
     white: 0xffffff,
     line: 0x999999,
+    badgeReadyBg: 0x1a3d2e,
+    badgeReadyText: 0x6ee7a8,
+    badgePendingBg: 0x3d3420,
+    badgePendingText: 0xf0c674,
   },
   PHASE: {
     IDLE: 'idle',

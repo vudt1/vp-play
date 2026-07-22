@@ -88,9 +88,22 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
   btnClear.x = 470;
   btnClear.y = BASE_H - 180;
 
-  const PANEL_W = 280;
+  const PANEL_MIN_W = 300;
+  const PANEL_MAX_W = 520;
+  const PANEL_RIGHT_MARGIN = 40;
+  const ROW_PAD_X = 14;
+  const ROW_PAD_Y = 12;
+  const AVATAR_R = 26;
+  const AVATAR_D = AVATAR_R * 2;
+  const COL_GAP = 12;
+  const BADGE_GAP = 10;
+  const ROW_H_BASE = 68;
+  const ROW_H_BADGE = 76;
+
+  let panelW = PANEL_MIN_W;
+  let rowH = ROW_H_BASE;
+
   const listRoot = new PIXI.Container();
-  listRoot.x = BASE_W - PANEL_W - 40;
   listRoot.y = 80;
   uiLayer.addChild(listRoot);
 
@@ -107,10 +120,16 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
   let lastSeats = [];
   let lastHost = null;
   let lastChecking = null;
+  let lastShowTicketBadges = false;
+  let lastContentH = 80;
+
+  function placeListRoot() {
+    listRoot.x = BASE_W - panelW - PANEL_RIGHT_MARGIN;
+  }
+  placeListRoot();
 
   function getMaxHeight() {
-    const h = Math.min(BASE_H - 120, 40 + (lastSeats?.length || 0) * 68);
-    return Math.max(h, 80);
+    return Math.min(BASE_H - 120, Math.max(80, lastContentH));
   }
 
   const animState = { height: 0 };
@@ -119,11 +138,11 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
     listPanel.clear();
     listMask.clear();
     if (height > 0) {
-      listPanel.roundRect(0, 0, PANEL_W, height, 14);
+      listPanel.roundRect(0, 0, panelW, height, 14);
       listPanel.fill({ color: COLOR.panel, alpha: 0.92 });
       listPanel.stroke({ width: 1, color: 0x5a667a });
 
-      listMask.roundRect(0, 0, PANEL_W, height, 14);
+      listMask.roundRect(0, 0, panelW, height, 14);
       listMask.fill({ color: 0xffffff });
     }
   }
@@ -202,10 +221,55 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
     handsTexture = tex;
   }
 
-  function paintList(seats, hostPccuid, checkingPccuid) {
+  function makeTicketBadge(ready) {
+    const label = ready ? 'đã sẵn sàng' : 'chưa chọn vé';
+    const bgColor = ready ? COLOR.badgeReadyBg : COLOR.badgePendingBg;
+    const textColor = ready ? COLOR.badgeReadyText : COLOR.badgePendingText;
+    const t = makeText(label, {
+      fontFamily: 'Segoe UI, system-ui, sans-serif',
+      fontSize: 13,
+      fill: textColor,
+      fontWeight: '700',
+    });
+    const padX = 8;
+    const padY = 4;
+    const bw = Math.ceil(t.width) + padX * 2;
+    const bh = Math.ceil(t.height) + padY * 2;
+    const c = new PIXI.Container();
+    const g = new PIXI.Graphics();
+    g.roundRect(0, 0, bw, bh, 8);
+    g.fill({ color: bgColor });
+    t.x = padX;
+    t.y = padY;
+    c.addChild(g, t);
+    c._badgeW = bw;
+    c._badgeH = bh;
+    return c;
+  }
+
+  function measureBadgeColW() {
+    const a = makeTicketBadge(false);
+    const b = makeTicketBadge(true);
+    return Math.max(a._badgeW, b._badgeW);
+  }
+
+  function measureNameWidth(label) {
+    const t = makeText(label || '?', {
+      fontFamily: 'Segoe UI, system-ui, sans-serif',
+      fontSize: 22,
+      fill: COLOR.text,
+      fontWeight: '600',
+    });
+    return Math.ceil(t.width);
+  }
+
+  function paintList(seats, hostPccuid, checkingPccuid, opts) {
     lastSeats = seats;
     lastHost = hostPccuid;
     lastChecking = checkingPccuid;
+    lastShowTicketBadges = !!(opts && opts.showTicketBadges);
+    const showTicketBadges = lastShowTicketBadges;
+    rowH = showTicketBadges ? ROW_H_BADGE : ROW_H_BASE;
 
     if (typeof gsap !== 'undefined') {
       listItems.children.forEach((row) => {
@@ -219,32 +283,79 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
 
     listItems.removeChildren();
 
-    const fullH = getMaxHeight();
-    if (typeof gsap === 'undefined' || !gsap.isTweening(animState)) {
-      animState.height = listVisible ? fullH : 0;
-    }
-    redrawPanel(animState.height);
-    listRoot.visible = listVisible || (typeof gsap !== 'undefined' && gsap.isTweening(animState));
+    const seatList = seats || [];
+    const badgeColW = showTicketBadges ? measureBadgeColW() : 0;
+    const handColW = !showTicketBadges && checkingPccuid ? 40 : 0;
+    const rightColW = Math.max(badgeColW, handColW);
 
-    (seats || []).forEach((s, i) => {
+    let maxNameW = 72;
+    for (const s of seatList) {
+      maxNameW = Math.max(maxNameW, measureNameWidth(s.displayName || s.pccuid));
+    }
+    // Cap name column so panel stays on-screen; wrap instead of ellipsis-trim.
+    const nameColCap = showTicketBadges ? 200 : 220;
+    const nameColW = Math.min(maxNameW, nameColCap);
+
+    const contentW =
+      ROW_PAD_X +
+      AVATAR_D +
+      COL_GAP +
+      nameColW +
+      (rightColW ? BADGE_GAP + rightColW : 0) +
+      ROW_PAD_X;
+    panelW = Math.max(PANEL_MIN_W, Math.min(PANEL_MAX_W, contentW));
+    placeListRoot();
+
+    const nameX = ROW_PAD_X + AVATAR_D + COL_GAP;
+    const rightColX = panelW - ROW_PAD_X - rightColW;
+    let yCursor = ROW_PAD_Y;
+
+    seatList.forEach((s) => {
       const row = new PIXI.Container();
-      row.y = 16 + i * 68;
-      row.x = 16;
+      row.y = yCursor;
+      row.x = 0;
+      row.eventMode = 'static';
+
+      const isHost = s.pccuid === hostPccuid;
+      const nameText = makeText(s.displayName || s.pccuid, {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: 22,
+        fill: COLOR.text,
+        fontWeight: '600',
+        wordWrap: true,
+        wordWrapWidth: nameColW,
+        breakWords: true,
+      });
+      nameText.x = nameX;
+
+      let hostTag = null;
+      if (isHost) {
+        hostTag = makeText('Host', {
+          fontFamily: 'Segoe UI, system-ui, sans-serif',
+          fontSize: 18,
+          fill: COLOR.accent,
+          fontWeight: '700',
+        });
+        hostTag.x = nameX;
+      }
+
+      const nameBlockH = nameText.height + (hostTag ? hostTag.height + 2 : 0);
+      const thisRowH = Math.max(rowH, nameBlockH + 8, AVATAR_D + 8);
+      const midY = thisRowH / 2;
 
       const av = new PIXI.Graphics();
-      const r = 26; // Increased from 22 to 26 (size 52x52)
-      av.circle(r, r, r);
-      av.fill({ color: s.pccuid === hostPccuid ? COLOR.accent : 0x3a465c });
+      av.circle(ROW_PAD_X + AVATAR_R, midY, AVATAR_R);
+      av.fill({ color: isHost ? COLOR.accent : 0x3a465c });
 
       const letter = makeText((s.displayName || '?').charAt(0).toUpperCase(), {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 26, // Increased from 22 to 26
+        fontSize: 26,
         fill: COLOR.text,
         fontWeight: '700',
       });
       letter.anchor.set(0.5);
-      letter.x = r;
-      letter.y = r;
+      letter.x = ROW_PAD_X + AVATAR_R;
+      letter.y = midY;
       row.addChild(av, letter);
 
       const textGroup = new PIXI.Container();
@@ -252,41 +363,29 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
       row._textGroup = textGroup;
       row.addChild(textGroup);
 
-      row.eventMode = 'static';
-      const nameText = makeText(s.displayName || s.pccuid, {
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: 24,
-        fill: COLOR.text,
-        fontWeight: '600',
-      });
-      nameText.x = 80;
-
-      if (s.pccuid === hostPccuid) {
-        nameText.y = r - 26;
-
-        const hostTag = makeText('Host', {
-          fontFamily: 'Segoe UI, system-ui, sans-serif',
-          fontSize: 20,
-          fill: COLOR.accent,
-          fontWeight: '700',
-        });
-        hostTag.x = 80;
-        hostTag.y = r + 2;
+      const nameTop = Math.max(0, (thisRowH - nameBlockH) / 2);
+      nameText.y = nameTop;
+      if (hostTag) {
+        hostTag.y = nameTop + nameText.height + 2;
         textGroup.addChild(nameText, hostTag);
       } else {
-        nameText.y = r - 12;
         textGroup.addChild(nameText);
       }
 
-      if (checkingPccuid && s.pccuid === checkingPccuid) {
+      if (showTicketBadges && rightColW > 0) {
+        const badge = makeTicketBadge(!!s.ticketId);
+        badge.x = rightColX + (rightColW - badge._badgeW);
+        badge.y = Math.max(0, midY - badge._badgeH / 2);
+        row.addChild(badge);
+      } else if (checkingPccuid && s.pccuid === checkingPccuid) {
         // On row (not textGroup) so hands stay visible while list panel is open.
         if (handsTexture) {
           const hand = new PIXI.Sprite(handsTexture);
           hand.width = 36;
           hand.height = 36;
           hand.anchor.set(0.5);
-          hand.x = PANEL_W - 40;
-          hand.y = r;
+          hand.x = rightColX + rightColW / 2;
+          hand.y = midY;
           row.addChild(hand);
 
           if (typeof gsap !== 'undefined') {
@@ -305,15 +404,25 @@ Loto.createHudView = function createHudView(uiLayer, overlayLayer) {
             fill: COLOR.gold,
           });
           handFallback.anchor.set(0.5);
-          handFallback.x = PANEL_W - 40;
-          handFallback.y = r;
+          handFallback.x = rightColX + rightColW / 2;
+          handFallback.y = midY;
           row.addChild(handFallback);
         }
       }
 
       if (!s.connected) row.alpha = 0.45;
       listItems.addChild(row);
+      yCursor += thisRowH;
     });
+
+    lastContentH = seatList.length ? yCursor + ROW_PAD_Y : 80;
+
+    const fullH = getMaxHeight();
+    if (typeof gsap === 'undefined' || !gsap.isTweening(animState)) {
+      animState.height = listVisible ? fullH : 0;
+    }
+    redrawPanel(animState.height);
+    listRoot.visible = listVisible || (typeof gsap !== 'undefined' && gsap.isTweening(animState));
   }
 
   return {

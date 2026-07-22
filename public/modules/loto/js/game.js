@@ -189,9 +189,8 @@
       const t = currentPoolTicket();
       if (t) {
         const taken = (room.seats || []).find((s) => s.ticketId === t.ticketId);
-        const label = `${t.ticketId}${taken ? ` · ${taken.displayName}` : ''}${
-          me?.ticketId === t.ticketId ? ' · (của bạn)' : ''
-        }`;
+        const label = `${t.ticketId}${taken ? ` · ${taken.displayName}` : ''}${me?.ticketId === t.ticketId ? ' · (của bạn)' : ''
+          }`;
         board.renderPoolSlide(t, label);
       }
     } else {
@@ -210,7 +209,7 @@
       hud.btnNext.visible = false;
       hud.btnPick.visible = false;
       hud.btnClear.visible = false;
-      hud.paintList([], null, null);
+      hud.paintList([], null, null, { showTicketBadges: false });
       return;
     }
 
@@ -219,16 +218,18 @@
     const playing = room.phase === 'playing';
     const settling = room.phase === 'settling';
     const hasPool = (room.ticketPool || []).length > 0;
+    const poolReady = hasPool || (room.poolSize || 0) > 0;
     const allPicked =
       (room.seats || []).length >= 2 && (room.seats || []).every((s) => s.ticketId);
 
     const checkingUid = activeCheckingPccuid(room);
-    hud.paintList(room.seats, room.hostPccuid, checkingUid);
+    const showTicketBadges = waiting && poolReady;
+    hud.paintList(room.seats, room.hostPccuid, checkingUid, { showTicketBadges });
 
     hud.btnPrepare.visible = waiting && isHost();
     hud.btnPrepare.setEnabled(waiting && isHost() && (room.seats || []).length >= 2);
     hud.btnStart.visible = waiting && isHost();
-    hud.btnStart.setEnabled(waiting && isHost() && hasPool && allPicked);
+    hud.btnStart.setEnabled(waiting && isHost() && poolReady && allPicked);
 
     hud.btnPrev.visible = waiting && hasPool;
     hud.btnNext.visible = waiting && hasPool;
@@ -249,7 +250,7 @@
     let status = `Phòng ${room.id} · ${room.phase}`;
     if (playing || settling) {
       status += ` · đã rao ${room.drawnNumbers?.length || 0}/90`;
-      if (state.lastDrawn != null) status += ` · vừa: ${state.lastDrawn}`;
+      if (state.lastDrawn != null) status += ` · con số: ${state.lastDrawn}`;
     } else if (hasPool) {
       status += ` · vé ${(state.poolIndex % room.ticketPool.length) + 1}/${room.ticketPool.length}`;
     }
