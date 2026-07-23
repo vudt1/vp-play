@@ -99,4 +99,14 @@ describe('card', () => {
     assert.equal(THREE_SPADES, 0);
     assert.equal(rankOf(0), 0);
   });
+
+  it('maps cardId to assetName accurately', () => {
+    const { assetName } = require('../../../../src/modules/tienlen/domain/card');
+    assert.equal(assetName(0), 'S3');
+    assert.equal(assetName(48), 'S2');
+    assert.equal(assetName(49), 'C2');
+    assert.equal(assetName(50), 'D2');
+    assert.equal(assetName(51), 'H2');
+  });
 });
+
